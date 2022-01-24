@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>xhr</title>
+</head>
+<body>
+    <h1>xhr</h1>
+    <!-- 导入外部js文件  获取xhr -->
+    <!-- /static flask指定的默认的查找静态文件的路径 -->
+    
+    <script>
+         var xhr = new XMLHttpRequest();
+        console.log(xhr);
+        //1.通过xhr对象创建请求
+        // open(method,url,asyn)
+        xhr.open('get','http://127.0.0.1:5000/getServer',true);
+    </script>
+</body>
+</html>

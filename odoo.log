@@ -1,0 +1,996 @@
+2022-01-07 02:03:51,961 99508 INFO ? odoo: Odoo version 15.0-20220106 
+2022-01-07 02:03:51,963 99508 INFO ? odoo: Using configuration file at D:\odoo15\server\odoo.conf 
+2022-01-07 02:03:51,963 99508 INFO ? odoo: addons paths: ['D:\\odoo15\\server\\odoo\\addons', 'c:\\users\\administrator\\appdata\\local\\openerp s.a\\odoo\\addons\\15.0', 'd:\\odoo15\\server\\odoo\\addons'] 
+2022-01-07 02:03:51,963 99508 INFO ? odoo: database: odoosunray@localhost:5432 
+2022-01-07 02:03:53,014 99508 INFO ? odoo.addons.base.models.ir_actions_report: Will use the Wkhtmltopdf binary at D:\odoo15\thirdparty\wkhtmltopdf.exe 
+2022-01-07 02:03:53,951 99508 INFO ? odoo.service.server: Initiating shutdown 
+2022-01-07 02:03:53,951 99508 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2022-01-07 02:04:03,820 101192 INFO ? odoo: Odoo version 15.0-20220106 
+2022-01-07 02:04:03,822 101192 INFO ? odoo: Using configuration file at D:\odoo15\server\odoo.conf 
+2022-01-07 02:04:03,822 101192 INFO ? odoo: addons paths: ['D:\\odoo15\\server\\odoo\\addons', 'c:\\users\\administrator\\appdata\\local\\openerp s.a\\odoo\\addons\\15.0', 'd:\\odoo15\\server\\odoo\\addons'] 
+2022-01-07 02:04:03,822 101192 INFO ? odoo: database: odoosunray@localhost:5432 
+2022-01-07 02:04:04,024 101192 INFO ? odoo.addons.base.models.ir_actions_report: Will use the Wkhtmltopdf binary at D:\odoo15\thirdparty\wkhtmltopdf.exe 
+2022-01-07 02:04:04,535 101192 INFO ? odoo.service.server: HTTP service (werkzeug) running on leihui.LAN:8069 
+2022-01-07 02:04:24,480 101192 INFO ? odoo.http: HTTP Configuring static files 
+2022-01-07 02:04:25,023 101192 INFO ? odoo.http: Generating nondb routing 
+2022-01-07 02:04:25,806 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:25] "GET / HTTP/1.1" 303 - 1 0.437 0.876
+2022-01-07 02:04:26,043 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:26] "GET /web HTTP/1.1" 303 - 2 0.004 0.193
+2022-01-07 02:04:26,907 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=3/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoo13 host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:04:26,907 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=2/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoosunray host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:04:27,212 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/database/selector HTTP/1.1" 200 - 5 0.297 0.869
+2022-01-07 02:04:27,345 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/fontawesome/css/font-awesome.css HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,348 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/css/bootstrap.css HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,348 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/jquery/jquery.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,351 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/index.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,352 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/popper/popper.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,353 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/util.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,414 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/alert.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,415 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/button.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,435 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/carousel.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,444 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/collapse.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,483 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/dropdown.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,502 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/modal.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,505 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/tooltip.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,507 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/popover.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,510 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/scrollspy.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,513 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/lib/bootstrap/js/tab.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,585 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/src/public/database_manager.js HTTP/1.1" 200 - - - -
+2022-01-07 02:04:27,598 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:27] "GET /web/static/img/logo2.png HTTP/1.1" 200 - - - -
+2022-01-07 02:04:28,124 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:28] "GET /web/static/lib/fontawesome/fonts/fontawesome-webfont.eot HTTP/1.1" 200 - - - -
+2022-01-07 02:04:28,125 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:28] "GET /web/static/img/favicon.ico HTTP/1.1" 200 - - - -
+2022-01-07 02:04:35,424 101192 ERROR ? odoo.modules.loading: Database odoo13 not initialized, you can force it with `-i base` 
+2022-01-07 02:04:35,424 101192 INFO ? odoo.modules.registry: Registry loaded in 0.403s 
+2022-01-07 02:04:35,427 101192 INFO odoo13 werkzeug: 127.0.0.1 - - [07/Jan/2022 02:04:35] "GET /web?db=odoo13 HTTP/1.1" 500 - 7 0.319 0.119
+2022-01-07 02:04:35,435 101192 ERROR odoo13 werkzeug: Error on request:
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\http.py", line 1477, in _dispatch_nodb
+    result = request.dispatch()
+  File "D:\odoo15\server\odoo\http.py", line 811, in dispatch
+    r = self._call_function(**self.params)
+  File "D:\odoo15\server\odoo\http.py", line 361, in _call_function
+    return self.endpoint(*args, **kwargs)
+  File "D:\odoo15\server\odoo\http.py", line 917, in __call__
+    return self.method(*args, **kw)
+  File "D:\odoo15\server\odoo\http.py", line 536, in response_wrap
+    response = f(*args, **kw)
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 810, in web_client
+    ensure_db()
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 143, in ensure_db
+    abort_and_redirect(url_redirect.to_url())
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 111, in abort_and_redirect
+    response = request.redirect(url, 302)
+  File "D:\odoo15\server\odoo\http.py", line 311, in redirect
+    return request.registry['ir.http']._redirect(location, code)
+  File "D:\odoo15\server\odoo\modules\registry.py", line 182, in __getitem__
+    return self.models[model_name]
+Exception
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\odoo15\python\lib\site-packages\werkzeug\serving.py", line 306, in run_wsgi
+    execute(self.server.app)
+  File "D:\odoo15\python\lib\site-packages\werkzeug\serving.py", line 294, in execute
+    application_iter = app(environ, start_response)
+  File "D:\odoo15\server\odoo\service\server.py", line 476, in app
+    return self.app(e, s)
+  File "D:\odoo15\server\odoo\service\wsgi_server.py", line 112, in application
+    return application_unproxied(environ, start_response)
+  File "D:\odoo15\server\odoo\service\wsgi_server.py", line 87, in application_unproxied
+    result = odoo.http.root(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1314, in __call__
+    return self.dispatch(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1280, in __call__
+    return self.app(environ, start_wrapped)
+  File "D:\odoo15\python\lib\site-packages\werkzeug\middleware\shared_data.py", line 220, in __call__
+    return self.app(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1510, in dispatch
+    result = _dispatch_nodb()
+  File "D:\odoo15\server\odoo\http.py", line 1479, in _dispatch_nodb
+    return request._handle_exception(e)
+  File "D:\odoo15\server\odoo\http.py", line 749, in _handle_exception
+    return super(HttpRequest, self)._handle_exception(exception)
+  File "D:\odoo15\server\odoo\http.py", line 302, in _handle_exception
+    raise exception.with_traceback(None) from new_cause
+KeyError: 'ir.http' - - -
+2022-01-07 02:05:04,812 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:05:04,812 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:05:05,822 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:05:05,822 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:05:41,304 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=3/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoo13 host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:05:41,305 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=2/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoosunray host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:05:41,460 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:05:41] "GET /web/database/selector HTTP/1.1" 200 - 5 0.007 0.345
+2022-01-07 02:06:04,888 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:06:04,888 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:06:06,835 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:06:06,835 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:07:04,891 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:07:04,891 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:07:07,848 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:07:07,851 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:08:04,894 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:08:04,894 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:08:08,863 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:08:08,864 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:09:04,897 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:09:04,897 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:09:09,875 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:09:09,875 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:10:04,900 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:10:04,900 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:10:10,888 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:10:10,888 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:10:43,600 101192 INFO None werkzeug: 127.0.0.1 - - [07/Jan/2022 02:10:43] "POST /web/database/change_password HTTP/1.1" 303 - 1 0.002 0.180
+2022-01-07 02:10:43,750 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=3/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoo13 host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:10:43,751 101192 INFO ? odoo.sql_db: ConnectionPool(used=2/count=2/max=64): Closed 1 connections to 'user=odoosunray password=xxx dbname=odoosunray host=localhost port=5432 sslmode=prefer' 
+2022-01-07 02:10:43,918 101192 INFO ? werkzeug: 127.0.0.1 - - [07/Jan/2022 02:10:43] "GET /web/database/manager HTTP/1.1" 200 - 5 0.009 0.293
+2022-01-07 02:10:49,743 101192 INFO odoo13 werkzeug: 127.0.0.1 - - [07/Jan/2022 02:10:49] "GET /web?db=odoo13 HTTP/1.1" 500 - 1 0.001 0.046
+2022-01-07 02:10:49,819 101192 ERROR odoo13 werkzeug: Error on request:
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\http.py", line 1477, in _dispatch_nodb
+    result = request.dispatch()
+  File "D:\odoo15\server\odoo\http.py", line 811, in dispatch
+    r = self._call_function(**self.params)
+  File "D:\odoo15\server\odoo\http.py", line 361, in _call_function
+    return self.endpoint(*args, **kwargs)
+  File "D:\odoo15\server\odoo\http.py", line 917, in __call__
+    return self.method(*args, **kw)
+  File "D:\odoo15\server\odoo\http.py", line 536, in response_wrap
+    response = f(*args, **kw)
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 810, in web_client
+    ensure_db()
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 143, in ensure_db
+    abort_and_redirect(url_redirect.to_url())
+  File "D:\odoo15\server\odoo\addons\web\controllers\main.py", line 111, in abort_and_redirect
+    response = request.redirect(url, 302)
+  File "D:\odoo15\server\odoo\http.py", line 311, in redirect
+    return request.registry['ir.http']._redirect(location, code)
+  File "D:\odoo15\server\odoo\modules\registry.py", line 182, in __getitem__
+    return self.models[model_name]
+Exception
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\odoo15\python\lib\site-packages\werkzeug\serving.py", line 306, in run_wsgi
+    execute(self.server.app)
+  File "D:\odoo15\python\lib\site-packages\werkzeug\serving.py", line 294, in execute
+    application_iter = app(environ, start_response)
+  File "D:\odoo15\server\odoo\service\server.py", line 476, in app
+    return self.app(e, s)
+  File "D:\odoo15\server\odoo\service\wsgi_server.py", line 112, in application
+    return application_unproxied(environ, start_response)
+  File "D:\odoo15\server\odoo\service\wsgi_server.py", line 87, in application_unproxied
+    result = odoo.http.root(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1314, in __call__
+    return self.dispatch(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1280, in __call__
+    return self.app(environ, start_wrapped)
+  File "D:\odoo15\python\lib\site-packages\werkzeug\middleware\shared_data.py", line 220, in __call__
+    return self.app(environ, start_response)
+  File "D:\odoo15\server\odoo\http.py", line 1510, in dispatch
+    result = _dispatch_nodb()
+  File "D:\odoo15\server\odoo\http.py", line 1479, in _dispatch_nodb
+    return request._handle_exception(e)
+  File "D:\odoo15\server\odoo\http.py", line 749, in _handle_exception
+    return super(HttpRequest, self)._handle_exception(exception)
+  File "D:\odoo15\server\odoo\http.py", line 302, in _handle_exception
+    raise exception.with_traceback(None) from new_cause
+KeyError: 'ir.http' - - -
+2022-01-07 02:11:04,927 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:11:04,927 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:11:11,901 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:11:11,901 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:12:04,928 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:12:04,929 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:12:12,911 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:12:12,912 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:13:04,931 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:13:04,932 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:13:13,924 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:13:13,924 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:14:04,937 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:14:04,939 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:14:14,937 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:14:14,937 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:15:04,940 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:15:04,942 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:15:15,980 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:15:15,982 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:16:04,944 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:16:04,945 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:16:16,993 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:16:16,993 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:17:04,947 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:17:04,948 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:17:18,007 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:17:18,007 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:18:04,951 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:18:04,952 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:18:19,022 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:18:19,022 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:19:04,955 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:19:04,955 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:19:20,032 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:19:20,033 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:20:04,957 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:20:04,957 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:20:21,046 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:20:21,046 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:21:04,959 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:21:04,959 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:21:22,057 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:21:22,057 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:22:04,960 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:22:04,960 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:22:23,071 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:22:23,071 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:23:04,963 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:23:04,963 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:23:24,081 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:23:24,083 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:24:04,964 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:24:04,964 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:24:25,095 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:24:25,095 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:25:04,967 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:25:04,967 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:25:26,108 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:25:26,108 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:26:04,969 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:26:04,969 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:26:27,121 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:26:27,121 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:27:04,973 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:27:04,974 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:27:28,132 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:27:28,132 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:28:05,000 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:28:05,000 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:28:29,144 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:28:29,144 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:29:05,006 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:29:05,006 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:29:30,158 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:29:30,159 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:30:05,007 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:30:05,007 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:30:31,171 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:30:31,171 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:31:05,009 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:31:05,009 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:31:32,183 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:31:32,184 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:32:05,011 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:32:05,012 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:32:33,196 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:32:33,196 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:33:05,014 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:33:05,015 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:33:34,207 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:33:34,207 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:34:05,022 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:34:05,022 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:34:35,220 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:34:35,220 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:35:05,032 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:35:05,032 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:35:36,232 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:35:36,232 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:36:05,035 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:36:05,035 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:36:37,244 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:36:37,246 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:37:05,038 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:37:05,038 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:37:38,256 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:37:38,257 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:38:05,039 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:38:05,039 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:38:39,271 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:38:39,272 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:39:05,042 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:39:05,042 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:39:40,283 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:39:40,283 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:40:05,047 101192 ERROR odoo13 odoo.sql_db: bad query: 
+            SELECT latest_version
+            FROM ir_module_module
+             WHERE name='base'
+        
+ERROR: relation "ir_module_module" does not exist
+LINE 3:             FROM ir_module_module
+                         ^
+ 
+2022-01-07 02:40:05,047 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Tried to poll an undefined table on database odoo13. 
+2022-01-07 02:40:25,432 101192 INFO odoo13 odoo.sql_db: Connection to the database failed 
+2022-01-07 02:40:25,432 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Exception in cron: 
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\addons\base\models\ir_cron.py", line 95, in _process_jobs
+    with db.cursor() as cron_cr:
+  File "D:\odoo15\server\odoo\sql_db.py", line 706, in cursor
+    return Cursor(self.__pool, self.dbname, self.dsn, serialized=serialized)
+  File "D:\odoo15\server\odoo\sql_db.py", line 256, in __init__
+    self._cnx = pool.borrow(dsn)
+  File "D:\odoo15\server\odoo\sql_db.py", line 589, in _locked
+    return fun(self, *args, **kwargs)
+  File "D:\odoo15\server\odoo\sql_db.py", line 657, in borrow
+    **connection_info)
+  File "D:\odoo15\python\lib\site-packages\psycopg2\__init__.py", line 127, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: FATAL:  the database system is shutting down
+
+2022-01-07 02:40:25,537 101192 INFO odoo13 odoo.sql_db: Connection to the database failed 
+2022-01-07 02:40:25,537 101192 WARNING odoo13 odoo.addons.base.models.ir_cron: Exception in cron: 
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\addons\base\models\ir_cron.py", line 95, in _process_jobs
+    with db.cursor() as cron_cr:
+  File "D:\odoo15\server\odoo\sql_db.py", line 706, in cursor
+    return Cursor(self.__pool, self.dbname, self.dsn, serialized=serialized)
+  File "D:\odoo15\server\odoo\sql_db.py", line 256, in __init__
+    self._cnx = pool.borrow(dsn)
+  File "D:\odoo15\server\odoo\sql_db.py", line 589, in _locked
+    return fun(self, *args, **kwargs)
+  File "D:\odoo15\server\odoo\sql_db.py", line 657, in borrow
+    **connection_info)
+  File "D:\odoo15\python\lib\site-packages\psycopg2\__init__.py", line 127, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: FATAL:  the database system is shutting down
+
+2022-01-07 03:03:33,234 2812 INFO ? odoo: Odoo version 15.0-20220106 
+2022-01-07 03:03:33,362 2812 INFO ? odoo: Using configuration file at D:\odoo15\server\odoo.conf 
+2022-01-07 03:03:33,362 2812 INFO ? odoo: addons paths: ['D:\\odoo15\\server\\odoo\\addons', 'c:\\users\\administrator\\appdata\\local\\openerp s.a\\odoo\\addons\\15.0', 'd:\\odoo15\\server\\odoo\\addons'] 
+2022-01-07 03:03:33,362 2812 INFO ? odoo: database: odoosunray@localhost:5432 
+2022-01-07 03:03:45,455 2812 INFO ? odoo.addons.base.models.ir_actions_report: Will use the Wkhtmltopdf binary at D:\odoo15\thirdparty\wkhtmltopdf.exe 
+2022-01-07 03:03:58,670 2812 INFO ? odoo.service.server: HTTP service (werkzeug) running on leihui.LAN:8069 
+2022-01-07 03:03:59,662 2812 INFO ? odoo.sql_db: Connection to the database failed 
+2022-01-07 03:04:00,688 2812 INFO ? odoo.sql_db: Connection to the database failed 
+2022-01-10 08:16:52,013 22568 INFO ? odoo: Odoo version 15.0-20220106 
+2022-01-10 08:16:52,047 22568 INFO ? odoo: Using configuration file at D:\odoo15\server\odoo.conf 
+2022-01-10 08:16:52,047 22568 INFO ? odoo: addons paths: ['D:\\odoo15\\server\\odoo\\addons', 'D:\\Anacoda\\envs\\odoo13\\lib\\site-packages\\odoo-13.0-py3.8.egg\\odoo\\addons', 'c:\\users\\administrator\\appdata\\local\\openerp s.a\\odoo\\addons\\15.0', 'd:\\odoo15\\server\\odoo\\addons'] 
+2022-01-10 08:16:52,048 22568 INFO ? odoo: database: odoosunray@localhost:5432 
+2022-01-10 08:16:52,376 22568 INFO ? odoo.addons.base.models.ir_actions_report: Will use the Wkhtmltopdf binary at D:\odoo15\thirdparty\wkhtmltopdf.exe 
+2022-01-10 08:16:52,406 22568 WARNING ? py.warnings: D:\odoo15\server\odoo\addons\base\models\ir_actions_report.py:68: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+  File "odoo-bin", line 8, in <module>
+    odoo.cli.main()
+  File "D:\odoo15\server\odoo\cli\command.py", line 61, in main
+    o.run(args)
+  File "D:\odoo15\server\odoo\cli\server.py", line 176, in run
+    main(args)
+  File "D:\odoo15\server\odoo\cli\server.py", line 170, in main
+    rc = odoo.service.server.start(preload=preload, stop=stop)
+  File "D:\odoo15\server\odoo\service\server.py", line 1286, in start
+    load_server_wide_modules()
+  File "D:\odoo15\server\odoo\service\server.py", line 1196, in load_server_wide_modules
+    odoo.modules.module.load_openerp_module(m)
+  File "D:\odoo15\server\odoo\modules\module.py", line 396, in load_openerp_module
+    __import__('odoo.addons.' + module_name)
+  File "D:\odoo15\server\odoo\addons\base\__init__.py", line 5, in <module>
+    from . import models
+  File "D:\odoo15\server\odoo\addons\base\models\__init__.py", line 13, in <module>
+    from . import ir_actions_report
+  File "D:\odoo15\server\odoo\addons\base\models\ir_actions_report.py", line 68, in <module>
+    if LooseVersion(version) < LooseVersion('0.12.0'):
+ 
+2022-01-10 08:16:52,407 22568 WARNING ? py.warnings: D:\odoo15\server\odoo\addons\base\models\ir_actions_report.py:73: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+  File "odoo-bin", line 8, in <module>
+    odoo.cli.main()
+  File "D:\odoo15\server\odoo\cli\command.py", line 61, in main
+    o.run(args)
+  File "D:\odoo15\server\odoo\cli\server.py", line 176, in run
+    main(args)
+  File "D:\odoo15\server\odoo\cli\server.py", line 170, in main
+    rc = odoo.service.server.start(preload=preload, stop=stop)
+  File "D:\odoo15\server\odoo\service\server.py", line 1286, in start
+    load_server_wide_modules()
+  File "D:\odoo15\server\odoo\service\server.py", line 1196, in load_server_wide_modules
+    odoo.modules.module.load_openerp_module(m)
+  File "D:\odoo15\server\odoo\modules\module.py", line 396, in load_openerp_module
+    __import__('odoo.addons.' + module_name)
+  File "D:\odoo15\server\odoo\addons\base\__init__.py", line 5, in <module>
+    from . import models
+  File "D:\odoo15\server\odoo\addons\base\models\__init__.py", line 13, in <module>
+    from . import ir_actions_report
+  File "D:\odoo15\server\odoo\addons\base\models\ir_actions_report.py", line 73, in <module>
+    if LooseVersion(version) >= LooseVersion('0.12.2'):
+ 
+2022-01-10 08:16:52,468 22568 CRITICAL ? odoo.modules.module: Couldn't load module base 
+2022-01-10 08:16:52,468 22568 CRITICAL ? odoo.modules.module: No module named 'OpenSSL' 
+2022-01-10 08:16:52,468 22568 ERROR ? odoo.service.server: Failed to load server-wide module `base`. 
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\service\server.py", line 1196, in load_server_wide_modules
+    odoo.modules.module.load_openerp_module(m)
+  File "D:\odoo15\server\odoo\modules\module.py", line 396, in load_openerp_module
+    __import__('odoo.addons.' + module_name)
+  File "D:\odoo15\server\odoo\addons\base\__init__.py", line 5, in <module>
+    from . import models
+  File "D:\odoo15\server\odoo\addons\base\models\__init__.py", line 23, in <module>
+    from . import ir_mail_server
+  File "D:\odoo15\server\odoo\addons\base\models\ir_mail_server.py", line 20, in <module>
+    from OpenSSL import crypto as SSLCrypto
+ModuleNotFoundError: No module named 'OpenSSL'
+2022-01-10 08:16:52,572 22568 CRITICAL ? odoo.modules.module: Couldn't load module web 
+2022-01-10 08:16:52,572 22568 CRITICAL ? odoo.modules.module: No module named 'OpenSSL' 
+2022-01-10 08:16:52,572 22568 ERROR ? odoo.service.server: Failed to load server-wide module `web`.
+The `web` module is provided by the addons found in the `openerp-web` project.
+Maybe you forgot to add those addons in your addons_path configuration. 
+Traceback (most recent call last):
+  File "D:\odoo15\server\odoo\service\server.py", line 1196, in load_server_wide_modules
+    odoo.modules.module.load_openerp_module(m)
+  File "D:\odoo15\server\odoo\modules\module.py", line 396, in load_openerp_module
+    __import__('odoo.addons.' + module_name)
+  File "D:\odoo15\server\odoo\addons\web\__init__.py", line 5, in <module>
+    from . import models
+  File "D:\odoo15\server\odoo\addons\web\models\__init__.py", line 8, in <module>
+    from . import base_document_layout
+  File "D:\odoo15\server\odoo\addons\web\models\base_document_layout.py", line 8, in <module>
+    from odoo.addons.base.models.ir_qweb_fields import nl2br
+  File "D:\odoo15\server\odoo\addons\base\__init__.py", line 5, in <module>
+    from . import models
+  File "D:\odoo15\server\odoo\addons\base\models\__init__.py", line 23, in <module>
+    from . import ir_mail_server
+  File "D:\odoo15\server\odoo\addons\base\models\ir_mail_server.py", line 20, in <module>
+    from OpenSSL import crypto as SSLCrypto
+ModuleNotFoundError: No module named 'OpenSSL'
+2022-01-10 08:17:43,590 22568 INFO ? odoo.service.server: Initiating shutdown 
+2022-01-10 08:17:43,590 22568 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 

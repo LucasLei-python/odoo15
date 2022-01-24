@@ -1,0 +1,1877 @@
+﻿/*********  Index CSS  *********/
+
+/* container-index */
+
+.container-index {}
+
+/*********  Index CSS End  *********/
+
+/*********  Store CSS  *********/
+
+/* container-store */
+
+.container-store {
+    padding: 0;
+}
+
+header .container-store {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+main .container-store {
+    background-color: #fff;
+}
+
+.container-store .info {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    text-align: center;
+}
+
+.container-store .info .logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    overflow: hidden;
+}
+
+.container-store .info p {
+    margin: 0;
+}
+
+.container-store .bar {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 14px;
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    overflow: hidden;
+    color: #999;
+}
+
+.container-store .bar .pull-left {
+    padding-left: 15px;
+}
+
+.container-store .store-list .item-info {
+    position: relative;
+    display: block;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    border: 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.container-store .store-list .item-info .item-name {
+    position: relative;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 16px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.container-store .store-list .item-info .item-address {
+    position: relative;
+    margin: 0;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+/*********  Store CSS End  *********/
+
+/*********  Product Category CSS  *********/
+
+/* container-product-category */
+
+.container-product-category {}
+
+.container-product-category .product-category {
+    margin-right: -15px;
+    margin-left: -15px;
+    overflow: hidden;
+}
+
+.container-product-category .product-category .nav-tabs {
+    border-bottom: none;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.container-product-category .product-category .nav-tabs>li {
+    float: none;
+}
+
+.container-product-category .product-category .nav-tabs a {
+    border: 1px solid #ddd;
+    border-left: none;
+    border-radius: 0;
+    margin-right: 0;
+    text-align: center;
+}
+
+.container-product-category .product-category .nav-tabs a:hover,
+.container-product-category .product-category .nav-tabs a:focus {
+    color: #fff;
+    background-color: #f44;
+}
+
+.container-product-category .product-category .nav-tabs .active a,
+.container-product-category .product-category .nav-tabs .active a:hover,
+.container-product-category .product-category .nav-tabs .active a:focus {
+    color: #f44;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-right: none;
+    margin-right: 0;
+}
+
+.container-product-category .product-category .tab-content {
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    padding-bottom: 30px;
+    padding-left: 3px;
+    padding-right: 3px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/*********  Product Category CSS End  *********/
+
+/*********  Product Details CSS  *********/
+
+/* container-product-details */
+
+.container-product-details {}
+
+/* product-content */
+
+.container-product-details .product-content {
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+/* product-decribe */
+
+.container-product-details .product-decribe {
+    background-color: #fff;
+    overflow: hidden;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.container-product-details .product-decribe h4 {
+    font-weight: normal;
+    margin: 0;
+    padding: 0 10px;
+    font-size: 16px;
+    line-height: 20px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    box-orient: vertical;
+    -webkit-box-orient: vertical;
+}
+
+.container-product-details .product-decribe .product-price {
+    color: #f44;
+    font-size: 18px;
+    line-height: 20px;
+    margin: 10px auto;
+}
+
+.container-product-details .product-decribe ul {
+    overflow: hidden;
+    margin: 10px auto;
+}
+
+.container-product-details .product-decribe ul li {
+    float: left;
+    font-size: 12px;
+    line-height: 20px;
+    color: #999;
+    width: 200px;
+}
+
+.container-product-details .product-select {
+    background-color: #fff;
+    margin-bottom: 10px;
+}
+
+.container-product-details .product-select a {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    padding: 10px;
+    padding-right: 15px;
+}
+
+.container-product-details .product-select a span {
+    line-height: 20px;
+}
+
+.container-product-details .product-select .right-arrow {
+    float: right;
+}
+
+.container-product-details .product-select .right-arrow .fa {
+    font-size: 18px;
+}
+
+/* product-tabs */
+
+.container-product-details .product-tabs {}
+
+.container-product-details .product-tabs .nav-tabs {
+    background-color: #fff;
+    border-bottom: #dfe6e7 1px solid;
+}
+
+.container-product-details .product-tabs .nav-tabs li {
+    width: 33.33333333%;
+    text-align: center;
+}
+
+.container-product-details .product-tabs .nav-tabs li a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid transparent;
+}
+
+.container-product-details .product-tabs .nav-tabs .active a,
+.container-product-details .product-tabs .nav-tabs .active a:hover,
+.container-product-details .product-tabs .nav-tabs .active a:focus {
+    color: #f44;
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid #f44;
+}
+
+.container-product-details .product-tabs .tab-content {
+    background-color: #fff;
+    padding-bottom: 50px;
+    min-height: 300px;
+}
+
+.container-product-details .product-tabs .tab-content ul {}
+
+.container-product-details .product-tabs .tab-content ul .block-item {
+    overflow: hidden;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.container-product-details .product-tabs .tab-content ul .block-item:first-child {
+    background-color: #f2f2f2;
+}
+
+.container-product-details .product-tabs .tab-content ul li span {
+    font-size: 12px;
+}
+
+.container-product-details .product-tabs .tab-content ul li span:first-child {
+    padding-left: 40px;
+}
+
+.container-product-details .product-tabs .tab-content .review {}
+
+.container-product-details .product-tabs .tab-content .review p {
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.container-product-details .product-tabs .tab-content .review p:last-child {
+    margin-bottom: 0;
+}
+
+/*********  Product Details CSS End  *********/
+
+/*********  Shopping Cart CSS  *********/
+
+.container-shopping-cart {
+    padding: 0;
+}
+
+.container-shopping-cart .title {
+    position: relative;
+    background: #fff;
+    color: #999;
+    font-size: 18px;
+    line-height: 52px;
+    height: 52px;
+    padding: 0 0 0 10px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.icon-check,
+.icon-shop {
+    float: left;
+    width: 18px;
+    height: 50px;
+    margin-right: 5px;
+    background-repeat: no-repeat;
+    background-size: 18px;
+    background-position: 50%;
+    cursor: pointer;
+}
+
+.container-shopping-cart .title .icon-check {
+    margin-right: 10px;
+}
+
+.icon-check {
+    background-image: url(../images/icon-check.png);
+}
+
+.icon-check-active {
+    background-image: url(../images/icon-check-active.png);
+}
+
+.icon-shop {
+    background-image: url(../images/logo-small.png);
+    background-size: 24px;
+    width: 24px;
+}
+
+.container-shopping-cart .title .shop-name {
+    display: inline-block;
+    font-size: 14px;
+    color: #333;
+    vertical-align: top;
+    line-height: 50px;
+}
+
+.container-shopping-cart .title .edit {
+    color: #38f;
+    float: right;
+    font-size: 12px;
+    padding: 0 10px;
+    cursor: pointer;
+}
+
+/* goods-list */
+
+.goods-list {
+    background: #fff;
+    overflow: hidden;
+}
+
+.goods {
+    background: #fafafa;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    padding: 10px 10px 10px 0;
+    cursor: pointer;
+}
+
+.goods .icon-check {
+    height: 90px;
+    width: 40px;
+    margin-right: 0;
+}
+
+.goods .goods-img {
+    float: left;
+}
+
+.goods .goods-img img {
+    width: 90px;
+    height: 90px;
+    margin-right: 10px;
+}
+
+.goods .goods-details {
+    overflow: hidden;
+}
+
+.goods .goods-name {
+    color: #333;
+    font-size: 14px;
+    line-height: 20px;
+    height: 40px;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    box-orient: vertical;
+    -webkit-box-orient: vertical;
+}
+
+.goods .sku {
+    color: #666;
+    font-size: 12px;
+    line-height: 20px;
+    height: 20px;
+    word-break: keep-all;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.goods .goods-price {
+    display: inline-block;
+    font-size: 14px;
+    color: #f44;
+    line-height: 20px;
+    height: 20px;
+}
+
+.goods .num {
+    font-size: 12px;
+    float: right;
+    color: #666;
+    line-height: 20px;
+    vertical-align: baseline;
+}
+
+.goods .quantity {
+    padding-bottom: 6px;
+    display: none;
+}
+
+.goods .delete-btn {
+    width: 60px;
+    height: 100%;
+    background: #ff4343;
+    color: #fff;
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: pointer;
+    display: none;
+}
+
+.goods .delete-btn span {
+    font-size: 12px;
+    left: 20px;
+    position: absolute;
+    top: 50%;
+    margin-top: -6px;
+}
+
+.goods-list .is-editing .goods-name {
+    display: none;
+}
+
+.goods-list .is-editing .quantity {
+    display: block;
+}
+
+.goods-list .is-editing .delete-btn {
+    display: block;
+}
+
+/* cart-bottom */
+
+.cart-bottom {}
+
+.cart-bottom .select-all {
+    display: inline-block;
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
+    color: #333;
+    margin-left: 10px;
+    vertical-align: baseline;
+}
+
+.cart-bottom .button-wrap {
+    float: right;
+    overflow: hidden;
+    vertical-align: baseline;
+}
+
+.cart-bottom .total-price {
+    float: left;
+    height: 50px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    vertical-align: baseline;
+    font-size: 12px;
+    line-height: 16px;
+    padding-top: 8px;
+    color: #999;
+}
+
+.cart-bottom .total-price-active {
+    color: #f60;
+}
+
+.cart-bottom .total-price .desc {
+    color: #999;
+}
+
+.cart-bottom .bottom-button {
+    height: 50px;
+    width: 90px;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    text-align: center;
+    margin-left: 10px;
+    background-color: #f1f1f1;
+    position: relative;
+    color: #999;
+    font-size: 14px;
+}
+
+.cart-bottom .bottom-button-active {
+    background-color: #f44;
+    color: #fff;
+}
+
+/*********  Shopping Cart CSS End  *********/
+
+/*********  Shopping Order CSS  *********/
+
+.container-shopping-order {
+    padding: 0;
+}
+
+.order-top-block {}
+
+.express::after {
+    content: '';
+    display: block;
+    height: 2px;
+    background-image: url(../images/border.png);
+    background-size: 34px 2px;
+}
+
+/* logistics */
+
+.logistics {
+    display: block;
+}
+
+.logistics .selected::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 10px;
+    width: 18px;
+    height: 18px;
+    background-image: url(../images/icon-site.png);
+    background-size: 18px 18px;
+}
+
+.logistics ul {
+    margin-left: 25px;
+    margin-right: 20px;
+}
+
+.logistics .tel {
+    float: right;
+}
+
+.logistics .address {
+    position: relative;
+    font-size: 12px;
+}
+
+.logistics .selected .right-arrow {
+    position: absolute;
+    right: 15px;
+    top: 35px;
+}
+
+.logistics .empty .icon-add-address {
+    position: absolute;
+    top: 50%;
+    margin-top: -12px;
+    width: 22px;
+    height: 22px;
+    background-image: url(../images/icon-add-address.png);
+    background-repeat: no-repeat;
+    background-size: 22px 22px;
+    background-position: center;
+}
+
+.logistics .empty .right-arrow {
+    position: absolute;
+    right: 15px;
+}
+
+.logistics .empty-address-tip {
+    margin-left: 25px;
+}
+
+.container-shopping-order .title {
+    position: relative;
+    background: #fff;
+    color: #999;
+    line-height: 50px;
+    height: 50px;
+    padding: 0 0 0 10px;
+    margin-top: 10px;
+}
+
+.container-shopping-order .title .shop-name {
+    display: inline-block;
+    font-size: 14px;
+    color: #333;
+    vertical-align: top;
+    line-height: 50px;
+}
+
+.container-shopping-order .goods-list .goods:last-child {
+    margin-bottom: 0;
+}
+
+.container-shopping-order .goods-list .goods .goods-img img {
+    margin-left: 10px;
+}
+
+.container-shopping-order .goods-list .goods .goods-details {
+    position: relative;
+}
+
+.container-shopping-order .goods-list .goods .goods-name {
+    padding-right: 70px;
+}
+
+.container-shopping-order .goods-list .goods .goods-price {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.container-shopping-order .goods-list .goods .num {
+    position: absolute;
+    top: 45px;
+    right: 10px;
+}
+
+/* order-message */
+
+.order-message {
+    padding: 10px;
+    line-height: 30px;
+    border-bottom: none;
+}
+
+.order-message span {
+    float: left;
+    color: #333;
+    width: 75px;
+}
+
+.order-message .input-wrapper {
+    padding-left: 75px;
+}
+
+.order-message textarea {
+    vertical-align: top;
+}
+
+.order-message textarea,
+.order-message input {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 99%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0;
+    color: #666;
+    border: 0;
+    -webkit-transition: height 0.3s ease-in-out;
+    -moz-transition: height 0.3s ease-in-out;
+    transition: height 0.3s ease-in-out;
+    resize: none;
+    outline: none;
+}
+
+/* order-integral */
+
+.order-integral {
+    margin-top: 10px;
+    padding: 10px;
+    line-height: 30px;
+    border-bottom: none;
+}
+
+.order-integral span {
+    float: left;
+    color: #333;
+    width: 75px;
+}
+
+.order-integral .input-wrapper {
+    padding-left: 75px;
+}
+
+.order-integral textarea {
+    vertical-align: top;
+}
+
+.order-integral textarea,
+.order-integral input {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 99%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0;
+    color: #666;
+    border: 0;
+    -webkit-transition: height 0.3s ease-in-out;
+    -moz-transition: height 0.3s ease-in-out;
+    transition: height 0.3s ease-in-out;
+    resize: none;
+    outline: none;
+}
+
+/* order-coupons */
+
+.order-coupons {
+    margin-top: 10px;
+    padding: 0;
+    line-height: 30px;
+    border-bottom: none;
+}
+
+.order-coupons a {
+    display: block;
+    padding: 10px;
+}
+
+.order-coupons .fa {
+    padding-left: 10px;
+}
+
+/* block-order-total */
+
+.block-order-total {
+    margin-top: 10px;
+    border-bottom: none;
+}
+
+.block-order-total p {
+    margin-bottom: 0;
+    line-height: 25px;
+}
+
+.cart-bottom .order-total-price {
+    float: left;
+    height: 50px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    vertical-align: baseline;
+    color: #999;
+    padding-top: 0;
+    font-size: 16px;
+    line-height: 50px;
+}
+
+.cart-bottom .order-total-price .price-num {
+    color: #f44;
+}
+
+.order-bottom-button {
+    position: relative;
+    width: 110px;
+    height: 50px;
+    border: none;
+    border-radius: 0;
+    text-align: center;
+    margin-left: 10px;
+    color: #fff;
+    border-color: #f44;
+    background-color: #f44;
+}
+
+/* payment-state */
+
+.payment-state {
+    background-color: #fff;
+    padding-top: 60px;
+    padding-bottom: 60px;
+}
+
+.payment-state .state {
+    margin: 0 0 30px;
+}
+
+.payment-state .pay-text {
+    margin-top: 20px;
+}
+
+.payment-state .failure p {
+    line-height: 100px;
+}
+
+.payment-state p {
+    font-size: 26px;
+    line-height: 40px;
+    margin-bottom: 0;
+}
+
+.payment-state .buttons {
+    margin: 0;
+}
+
+.payment-state .btn {
+    min-width: 100px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.recommend h3 {
+    text-align: center;
+    line-height: 60px;
+}
+
+@media (max-width: 630px) {
+    .payment-state .state {
+        margin: 0 0 30px;
+    }
+    .payment-state>.state>div {
+        width: 100%;
+        margin: 0;
+        text-align: center;
+    }
+    .payment-state>.state>div img {
+        margin: 0 auto;
+    }
+    .payment-state .failure p {
+        line-height: 50px;
+    }
+}
+
+/*********  Shopping Order CSS End  *********/
+
+/*********  Member Center CSS  *********/
+
+.container-member-center {
+    padding: 0;
+}
+
+.custom-level {
+    overflow: hidden;
+    position: relative;
+}
+
+.custom-level .custom-level-img {}
+
+.custom-level .custom-level-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    min-height: 26px;
+    margin: 0 auto;
+    width: 100%;
+    background-color: rgba(51, 51, 51, 0.8);
+    color: #fff;
+    font-size: 15px;
+    padding: 5px 15px;
+}
+
+.custom-level .custom-level-title p {
+    line-height: 25px;
+    margin-bottom: 0;
+}
+
+/* order-list-horizon */
+
+.order-list-horizon {
+    position: relative;
+    overflow: hidden;
+    background-color: #fff;
+    width: 100%;
+    padding: 10px 0;
+}
+
+.order-list-horizon li {
+    float: left;
+    width: 25%;
+    text-align: center;
+}
+
+.order-list-horizon li a {
+    position: relative;
+    display: block;
+}
+
+.order-list-horizon li a img {
+    width: 24px;
+    height: 24px;
+    margin: 10px auto;
+}
+
+.order-list-horizon li a .title-num {
+    box-sizing: content-box;
+    position: absolute;
+    left: 50%;
+    top: 2px;
+    height: 16px;
+    line-height: 16px;
+    padding: 0 5px;
+    margin-left: 1px;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    font-size: 10px;
+    color: #fff;
+    background-color: #f76161;
+}
+
+.order-list-horizon li a p {
+    margin-bottom: 0;
+}
+
+/* block-list */
+
+.block-list a.block-item {
+    display: block;
+    padding: 0;
+    padding-left: 20px;
+    padding-right: 15px;
+}
+
+.block-list a.block-item>.fa {
+    font-size: 18px;
+    width: 18px;
+    vertical-align: middle;
+}
+
+.block-list a.block-item span {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 40px;
+    margin-left: 10px;
+}
+
+.block-list a.block-item .right-arrow .fa {
+    font-size: 20px;
+    vertical-align: middle;
+}
+
+.order-list-horizon+.block-list a.block-item {
+    border-top: 1px solid #e5e5e5;
+    border-bottom: none;
+}
+
+/*********  Member Center CSS End  *********/
+
+/*********  Order List CSS  *********/
+
+.container-order-list {
+    padding: 0;
+}
+
+/* orderlist-tabs */
+
+.orderlist-tabs {}
+
+.orderlist-tabs .nav-tabs {
+    background-color: #fff;
+    border-bottom: #dfe6e7 1px solid;
+}
+
+.orderlist-tabs .nav-tabs li {
+    width: 20%;
+    text-align: center;
+}
+
+.orderlist-tabs .nav-tabs li a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid transparent;
+    padding: 10px 5px;
+}
+
+.orderlist-tabs .nav-tabs .active a,
+.orderlist-tabs .nav-tabs .active a:hover,
+.orderlist-tabs .nav-tabs .active a:focus {
+    color: #f44;
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid #f44;
+}
+
+.orderlist-tabs .tab-content {
+    padding-top: 10px;
+    padding-bottom: 30px;
+    min-height: 480px;
+}
+
+/* orderlist-item */
+
+.orderlist-item {
+    background-color: #fff;
+    margin-bottom: 10px;
+}
+
+.orderlist-item .title {
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+    line-height: 20px;
+}
+
+.orderlist-item .title .order-state {
+    color: #f60;
+}
+
+.orderlist-item .title .order-no {
+    color: #999;
+    font-size: 12px;
+}
+
+.orderlist-item .goods-list .goods:last-child {
+    margin-bottom: 0;
+}
+
+.orderlist-item .goods-list .goods .goods-img img {
+    margin-left: 10px;
+}
+
+.orderlist-item .goods-list .goods .goods-details {
+    position: relative;
+}
+
+.orderlist-item .goods-list .goods .goods-name {
+    padding-right: 70px;
+}
+
+.orderlist-item .goods-list .goods .goods-price {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    color: #f60;
+}
+
+.orderlist-item .goods-list .goods .num {
+    position: absolute;
+    top: 45px;
+    right: 0;
+}
+
+.orderlist-item .bottom-price {
+    text-align: right;
+    padding: 10px;
+}
+
+.orderlist-item .bottom-btn {
+    text-align: right;
+    padding: 10px;
+}
+
+.orderlist-item .bottom-btn .btn {
+    margin-left: 5px;
+    padding: 0 10px;
+    line-height: 28px;
+    vertical-align: middle;
+    border-radius: 3px;
+}
+
+/*********  Order List CSS End  *********/
+
+/*********  Order Review CSS  *********/
+
+.container-order-review {
+    padding: 0;
+}
+
+.container-order-review .order-review {
+    margin-top: 10px;
+}
+
+.order-review .title {
+    background-color: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+    line-height: 20px;
+}
+
+.order-review .title .order-state {
+    color: #f60;
+}
+
+.order-review .title .order-no {
+    color: #999;
+    font-size: 12px;
+}
+
+.order-review .order-review-item {
+    background-color: #fff;
+    margin-top: 10px;
+}
+
+.order-review .goods {
+    background-color: #fff;
+    margin-bottom: 0;
+}
+
+.order-review .goods .goods-img img {
+    margin-left: 10px;
+}
+
+.order-review .goods .goods-details {
+    position: relative;
+}
+
+.order-review .goods .goods-name {
+    padding-right: 70px;
+}
+
+.order-review .goods .goods-price {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    color: #f60;
+}
+
+.order-review .goods .num {
+    position: absolute;
+    top: 45px;
+    right: 0;
+}
+
+.order-review .goods-review {
+    padding: 10px;
+}
+
+.order-review .goods-review textarea {
+    box-sizing: border-box;
+    width: 100%;
+    height: 80px;
+    resize: none;
+    padding: 10px;
+    outline: none;
+    border: 1px solid #e5e5e5;
+    border-radius: 2px;
+    color: #666;
+}
+
+.order-review .order-review-btn{
+    text-align: center;
+    margin: 20px auto 30px;
+}
+
+.order-review .order-review-btn .btn {
+
+    vertical-align: middle;
+    border-radius: 3px;
+}
+
+/*********  Order Evaluate CSS End  *********/
+
+/*********  Order Details CSS  *********/
+
+.container-order-details {
+    padding: 0;
+}
+
+.order-step-block {
+    position: relative;
+    background-color: #fff;
+    padding-top: 15px;
+}
+
+.order-step {
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.order-step li {
+    font-size: 14px;
+    float: left;
+    padding-bottom: 20px;
+    position: relative;
+    width: 33.33333333%;
+}
+
+.order-step li:last-child {
+    position: absolute;
+    right: 10px;
+    width: auto;
+}
+
+.order-step .step-circle-container {
+    position: absolute;
+    top: 28px;
+    left: -8px;
+    padding: 0 8px;
+    background-color: #fff;
+    z-index: 10;
+}
+
+.order-step .cur .step-circle-container {
+    top: 24px;
+}
+
+.order-step li:last-child .step-circle-container {
+    left: auto;
+    right: -6px;
+}
+
+.order-step .step-circle {
+    display: block;
+    position: relative;
+    width: 5px;
+    height: 5px;
+    background-color: #e5e5e5;
+    border-radius: 50%;
+}
+
+.order-step .step-done .step-circle {
+    width: 5px;
+    height: 5px;
+    background-image: url(../images/icon_green.png);
+    background-size: 5px 5px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.order-step .cur .step-circle {
+    width: 13px;
+    height: 13px;
+    background-image: url(../images/success_small.png);
+    background-size: 13px 13px;
+}
+
+.order-step .step-title {
+    font-size: 12px;
+}
+
+.order-step .step-title {
+    display: inline-block;
+    -webkit-transform: translate3d(-50%, 0, 0);
+    -moz-transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-50%, 0, 0);
+    color: #999;
+}
+
+.order-step .step-done .step-title {
+    color: #333;
+}
+
+.order-step .cur .step-title {}
+
+.order-step li:first-child .step-title {
+    -webkit-transform: none;
+    -moz-transform: none;
+    -ms-transform: none;
+    transform: none;
+    margin-left: 0px;
+}
+
+.order-step li:last-child .step-title {
+    -webkit-transform: none;
+    -moz-transform: none;
+    -ms-transform: none;
+    transform: none;
+}
+
+.order-step .step-line {
+    position: absolute;
+    left: 0px;
+    top: 30px;
+    width: 100%;
+    height: 1px;
+    background-color: #e5e5e5;
+}
+
+.order-step .step-done .step-line {
+    background-color: #06bf04;
+}
+
+.order-step .cur .step-line {
+    background-color: #e5e5e5;
+}
+
+.order-step li:last-child .step-line {
+    width: 0;
+}
+
+.block-order-number-status {
+    margin-top: 10px;
+    border-bottom: none;
+}
+
+.block-order-number-status p {
+    margin-bottom: 0;
+    font-size: 12px;
+    line-height: 20px;
+}
+
+/*********  Order Details CSS End  *********/
+
+/*********  Member Address CSS  *********/
+
+.container-member-address {
+    padding: 0;
+}
+
+.container-member-address .address-list {
+    position: relative;
+    background-color: #fff;
+    padding: 0 15px;
+}
+
+/*********  Member Address CSS End  *********/
+
+/*********  Member Integral CSS  *********/
+
+.container-member-integral {
+    padding: 0;
+}
+
+.container-member-integral p {
+    margin-bottom: 0;
+}
+
+.container-member-integral .integral-info {
+    padding: 20px 10px 10px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    background-color: #53bd47;
+    color: #fff;
+    font-size: 14px;
+    position: relative;
+    text-align: center;
+    background-repeat: no-repeat;
+    background-position: center 110%;
+    background-image: url(../images/integral-info-bottom.png);
+}
+
+.container-member-integral .integral-info .points-usable {
+    font-size: 30px;
+    line-height: 50px;
+}
+
+.container-member-integral .integral-list {}
+
+.container-member-integral .integral-list .item-info {
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.container-member-integral .integral-list .item-desc {
+    font-size: 16px;
+    color: #333;
+    line-height: 30px;
+    margin-bottom: 0;
+}
+
+.container-member-integral .integral-list .item-time {
+    font-size: 12px;
+    color: #666;
+    line-height: 20px;
+    margin-bottom: 0;
+}
+
+.container-member-integral .integral-list .item-amount {
+    line-height: 50px;
+    font-size: 20px;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    margin-top: -25px;
+}
+
+/*********  Member Integral CSS End  *********/
+
+/*********  Member Coupons CSS  *********/
+
+.container-member-coupons {
+    padding: 0;
+}
+
+.container-member-coupons .coupons-tabs {}
+
+.container-member-coupons .coupons-tabs .nav-tabs {
+    background-color: #fff;
+    border-bottom: #dfe6e7 1px solid;
+}
+
+.container-member-coupons .coupons-tabs .nav-tabs li {
+    width: 50%;
+    text-align: center;
+}
+
+.container-member-coupons .coupons-tabs .nav-tabs li a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid transparent;
+}
+
+.container-member-coupons .coupons-tabs .nav-tabs .active a,
+.container-member-coupons .coupons-tabs .nav-tabs .active a:hover,
+.container-member-coupons .coupons-tabs .nav-tabs .active a:focus {
+    color: #f44;
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid #f44;
+}
+
+.container-member-coupons .coupons-tabs .tab-content {
+    position: relative;
+    padding: 15px;
+    min-height: 400px;
+}
+
+/*********  Member Coupons CSS End  *********/
+
+/*********  Member Reseller CSS  *********/
+
+.container-member-reseller {
+    padding: 0;
+}
+
+.container-member-reseller .earning {
+    position: relative;
+    background-color: #fff;
+    padding: 20px 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.container-member-reseller .earning p {
+    font-size: 14px;
+    color: #999;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.container-member-reseller .earning-number {
+    font-size: 32px;
+    color: #333;
+    text-align: center;
+}
+
+.container-member-reseller .earning-future {
+    font-size: 12px;
+    margin-top: 10px;
+    color: #999;
+    text-align: center;
+}
+
+.container-member-reseller .money-detail {
+    position: relative;
+    background-color: #fff;
+    line-height: 20px;
+}
+
+.container-member-reseller .money-detail a {
+    display: block;
+    padding: 15px 10px;
+}
+
+.container-member-reseller .customer {
+    position: relative;
+    background-color: #fff;
+    margin-top: 10px;
+}
+
+.container-member-reseller .customer ul {
+    overflow: hidden;
+}
+
+.container-member-reseller .customer ul li {
+    width: 33.3%;
+    float: left;
+    text-align: center;
+}
+
+.container-member-reseller .customer ul li a {
+    display: block;
+    overflow: hidden;
+}
+
+.container-member-reseller .customer a .number {
+    font-size: 24px;
+    line-height: 30px;
+    color: #f44;
+    margin-top: 20px;
+}
+
+.container-member-reseller .customer a p {
+    font-size: 12px;
+    line-height: 20px;
+    color: #333;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.container-member-reseller .promotion {
+    position: relative;
+    overflow: hidden;
+    background-color: #fff;
+    margin-top: 10px;
+}
+
+.container-member-reseller .promotion .promotion-item {
+    width: 50%;
+    float: left;
+    margin: 15px 0;
+    padding: 0 10px;
+}
+
+.container-member-reseller .promotion .promotion-item .inner {
+    position: relative;
+    display: block;
+    height: 70px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.container-member-reseller .promotion .promotion-item .inner .promotion-title {
+    position: absolute;
+    top: 15px;
+    left: 10px;
+    color: #fff;
+    font-size: 16px;
+    line-height: 20px;
+}
+
+.container-member-reseller .promotion .promotion-item .inner .promotion-link {
+    position: absolute;
+    left: 10px;
+    bottom: 15px;
+    color: #fff;
+    font-size: 12px;
+    line-height: 20px;
+}
+
+.container-member-reseller .promotion .promotion-item .inner .promotion-icon {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.container-member-reseller .promotion .promotion-item .inner-1 {
+    background-image: linear-gradient(-43deg, #f7c4c4, #f59b9c);
+    background-size: cover;
+}
+
+.container-member-reseller .promotion .promotion-item .inner-1 .promotion-icon {
+    background: url(../images/icon_invite.png);
+    background-size: 34px 43px;
+    background-repeat: no-repeat;
+    width: 34px;
+    height: 43px;
+}
+
+.container-member-reseller .reseller-info {
+    position: relative;
+    background-color: #fff;
+    padding: 20px 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.container-member-reseller .reseller-info p {
+    font-size: 16px;
+    line-height: 30px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.container-member-reseller .reseller-info .number {
+    font-size: 32px;
+    line-height: 50px;
+    color: #f44;
+    text-align: center;
+}
+
+.container-member-reseller .reseller-list {}
+
+.container-member-reseller .reseller-list .item-info {
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.container-member-reseller .reseller-list .item-desc {
+    font-size: 14px;
+    color: #666;
+    line-height: 30px;
+    margin-bottom: 0;
+}
+
+.container-member-reseller .reseller-list .item-desc span {
+    padding-right: 5px;
+}
+
+.container-member-reseller .reseller-list .item-time {
+    font-size: 12px;
+    color: #999;
+    line-height: 20px;
+    margin-bottom: 0;
+}
+
+.container-member-reseller .reseller-list .item-amount {
+    line-height: 50px;
+    font-size: 18px;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    margin-top: -25px;
+}
+
+.container-member-reseller .account-info {
+    text-align: center;
+    padding: 50px 15px 50px;
+}
+
+.container-member-reseller .account-info img {
+    width: 160px;
+}
+
+.container-member-reseller .account-info p {
+    margin: 10px auto;
+}
+
+.container-member-reseller .account-info .number {
+    font-size: 28px;
+    line-height: 30px;
+    color: #333;
+    text-align: center;
+}
+
+.container-member-reseller .account-info .buttons {
+    margin: 20px 0 0;
+}
+
+.container-member-reseller .account-tabs {}
+
+.container-member-reseller .account-tabs .nav-tabs {
+    background-color: #fff;
+    border-bottom: #dfe6e7 1px solid;
+}
+
+.container-member-reseller .account-tabs .nav-tabs li {
+    width: 50%;
+    text-align: center;
+}
+
+.container-member-reseller .account-tabs .nav-tabs li a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid transparent;
+}
+
+.container-member-reseller .account-tabs .nav-tabs .active a,
+.container-member-reseller .account-tabs .nav-tabs .active a:hover,
+.container-member-reseller .account-tabs .nav-tabs .active a:focus {
+    color: #f44;
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid #f44;
+}
+
+.container-member-reseller .account-tabs .tab-content {
+    background-color: #fff;
+    padding-bottom: 50px;
+    min-height: 300px;
+}
+
+#account-withdrawal-record .reseller-list .item-amount {
+    font-size: 14px;
+}
+
+.container-member-reseller .withdraw-info {
+    padding-top: 20px
+}
+
+.container-member-reseller .withdraw-info .withdraw-money {
+    float: right;
+    color: #666;
+    text-align: right;
+    padding: 0;
+    border: 0;
+    outline: none;
+}
+
+.container-member-reseller .withdraw-info .block-item {
+    padding: 15px;
+}
+
+.container-member-reseller .withdraw-info .block-item .pull-right .fa {
+    padding-left: 10px;
+}
+
+.container-member-reseller .withdraw-info .buttons {
+    padding: 20px 15px;
+}
+
+.container-member-reseller .withdraw-info ul {
+    padding: 0 15px;
+    margin-bottom: 20px;
+}
+
+.container-member-reseller .withdraw-info ul li {
+    color: #999;
+    font-size: 12px;
+    line-height: 20px;
+}
+
+/*********  Member Reseller CSS End  *********/
+
+/*********  Login CSS  *********/
+
+.container-login {
+    padding: 0;
+}
+
+.container-login .content-box {
+    position: relative;
+    padding: 40px 15px;
+    background-color: #fff;
+}
+
+.container-login .content-box .buttons {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.container-login .content-box .form-group a {
+    font-size: 16px;
+}
+
+.container-login .content-box .else-login-box {
+    text-align: center;
+    font-size: 16px;
+    color: #999;
+}
+
+.container-login .content-box .else-login {}
+
+.container-login .content-box .else-login .fa-box {
+    display: inline-block;
+    background-color: #ddd;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.container-login .content-box .else-login .fa-box-weixin:hover,
+.container-login .content-box .else-login .fa-box-weixin:focus {
+    background-color: #06bf04;
+}
+
+.container-login .content-box .else-login .fa {
+    color: #fff;
+    font-size: 18px;
+    line-height: 36px;
+}
+
+/*********  Login CSS End  *********/
+
+/*********  Register CSS  *********/
+
+.container-register {
+    padding: 0;
+}
+
+.container-register .content-box {
+    position: relative;
+    padding: 40px 15px;
+    background-color: #fff;
+}
+
+.container-register .content-box .input-lg {
+    height: 40px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-register .content-box .btn-lg {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-register .content-box .buttons {
+    margin-top: 30px;
+}
+
+/*********  Register CSS End  *********/
+
+/*********  Change Password CSS  *********/
+
+.container-change-password {
+    padding: 0;
+}
+
+.container-change-password .content-box {
+    position: relative;
+    padding: 40px 15px;
+    background-color: #fff;
+}
+
+.container-change-password .content-box .input-lg {
+    height: 40px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-change-password .content-box .btn-lg {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-change-password .content-box .buttons {
+    margin-top: 30px;
+}
+
+/*********  Change Password CSS End  *********/
+
+/*********  Binding Phone CSS  *********/
+
+.container-binding-phone {
+    padding: 0;
+}
+
+.container-binding-phone .content-box {
+    position: relative;
+    padding: 40px 15px;
+    background-color: #fff;
+}
+
+.container-binding-phone .content-box .captcha-container {
+    padding-right: 0;
+}
+
+.container-binding-phone .content-box .input-lg {
+    height: 40px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-binding-phone .content-box .btn-lg {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.container-binding-phone .content-box .buttons {
+    margin-top: 30px;
+}
+
+/*********  Binding Phone CSS End  *********/

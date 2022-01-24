@@ -1,0 +1,12 @@
+.container-product-details .product-tabs .nav-tabs li {
+    width: 50%;
+}
+
+.container-member-reseller .account-info img {
+    display: inline;
+}
+
+.my_tips {
+    font-weight: 700;
+    color: red;
+}

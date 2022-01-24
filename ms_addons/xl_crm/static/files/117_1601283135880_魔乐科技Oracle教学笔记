@@ -1,0 +1,391 @@
+一、Oracle准备知识
+1.Oracle简介
+2.Oracle安装与配置
+3.SQLplus命令
+4.SQL简介&数据表分析
+二、SQL基础查询
+1.SQL简单查询
+2.SQL限定查询
+3.查询排序
+4.综合练习:基础查询
+三、单行函数
+1.字符串函数
+2.数值函数
+3.日期函数
+4.转换函数
+5.通用函数
+四、多表查询
+1.基本概念
+2.表的连接
+3.SQL:1999语法
+4.数据集合操作
+五、分组统计查询
+1.统计函数
+2.分组查询
+六、子查询
+1.子查询
+2.综合练习:复杂查询
+七、数据更新与事务处理
+1.增加数据
+2.修改数据
+3.删除数据
+4.事务处理
+八、数据为列
+1.ROWNUN
+2.ROWID
+九、表的创建于管理
+1.常用数据类型
+2.表的创建
+3.为表重命名
+4.截断表
+5.表的复制
+6.表的删除
+7.闪回技术
+8.修改表结构
+十、约束的创建与管理
+1.非空约束
+2.唯一约束
+3.主键约束
+4.检查约束
+5.外键约束
+6.修改约束
+十一、综合实战:DML&DDL
+1.建表、增加数据
+2.数据操作
+十二、常用数据库对象
+1.序列
+2.同义词
+3.视图的定义与使用
+4.索引
+5.用户管理
+6.数据库备份
+十三、数据库设计
+1.数据库设计第一范式
+2.数据库设计第二范式
+3.数据库设计第三范式
+4.PowerDesigner
+5.综合实战:数据库设计分析实
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+<<SQLplus命令>>
+1.运行sqlplus 在cmd中打开语句：sqlplus 用户名/口令
+2.用笔记本编写语句，格式：ed 文件名 执行时必须要关闭记事本，不然会阻塞，格式：@文件名
+3.切换用户语法，格式： conn 用户名/密码 as sysdba 如果是sys用户登录必须加as sysdba
+4.查询用户名语句，格式：show user
+5.sqlplus调用本机命令用host作为前缀
+ 
+ 
+<<SQL简介&数据表分析>>
+1、sql：结构化查询语言
+2、sql关键词：SELECT FROM WHERE GROUP BY HAVING ORDER BY INSERT INTO UPDATE DELETE CREATE DROP ALTER GRANT REVOKE
+3、分类
+DML：主要是查询与更新
+DDL：数据对象的创建*（表、用户），需要涉及到设计范式
+DCL：权限管理操作（需结合用户），由DBA负责
+4、用户下的所有表
+SELECT * FROM tab;
+查询表结构
+Desc 表名称;
+ 
+ 
+<<SQL简单查询>>
+SELECT [DISTINT] * | 列名[别名]，列名[别名]，..
+FROM 表名称 [别名]；
+首先执行的是from语句，在通过select筛选 *表示全部
+例如：select emname,empno from emp;查询固定的列
+select distinct,job, empno from emp;去掉重复的数据
+select emname,empno,sal*12 income from emp; inclome是别名代表sal*12
+select emname,empno,（sal*12+12*（200+100））income from emp;
+select emname||empno from emp;将name和no合并成一个列了
+2.效果：雇员编号：7369,姓名：SMITH，收入：800
+select '雇员编号：'||empno ||',姓名：'||ename||',收入：'|| sal info from emp;info是别名
+字符串用’ ’表示
+ 
+ 
+<<SQL限定查询>>
+限定查询符号：
+ 1.关系运算符：>大于,<小于,>=大于等于,<=小于等于,<>(!=)不等于
+Select*from emp where sal [>,<,>=,<=,<>(!=)] 1000 ;
+2.逻辑运算符：AND与,OR或,NOT非。
+Select*from emp where job=’CLERK’ and sal>900;
+Select*from emp where job='CLERK' or deptno=20;
+Select*from emp where not deptno=20;
+3.范围运算符：BETWEEN之间...AND和;
+Select*from emp where sal between 2000 and 4000;
+4.谓词范围：IN在,NOT IN不再;
+Select*from emp where sal in(1250,5000);
+Select*from emp where sal not in(1250,5000);
+5.空判断：IS NULL空,IS NOT NULL非空;
+Select*from emp where comm is null;
+Select*from emp where comm is not null;
+6.模糊查询;LIKE像.
+Select*from emp where ename like’A%’;
+Select*from emp where ename like'_A%';
+Select*from emp where ename like'%A%';
+ 
+<<查询排序>>
+排序方式：ASC(默认)升序，DESC:降序；
+例如：SELECT * FROM emp ORDER BY sal DESC;（降序）
+例如：SELECT * FROM emp WHERE job='SALEMAN' ORDER BY sal ASC;（升序）
+例如：SELECT * FROM emp ORDER BY sal DESC,hiredata ASC;（升序）
+ORDER BY 在SELECT子句之后执行，故可以使用SELECT子句中的别名；
+例如：SELECT empno,ename,sal*12 income FROM emp ORDER BY income;
+基本上只有ORDER BY可以调用SELECT子句中定义的别名
+ 
+ 
+<<字符串函数>>
+主要单函：
+1.字符串 UPPER（列 | 字符串）-大写
+SELECT UPPER(ename) FROM emp;(全部变为大写)
+2.字符串 LOWER（列 | 字符串）-小写
+SELECT LOWER('ename') FROM emp; (全部变为小写)
+SELECT * FROM emp WHERE ename=UPPER('&inputname');
+3.字符串 INITCAP（列 | 字符串）-开头首字母大写，其它字母全小写
+SELECT ename,INITCAP(ename) FROM emp; (手写子母大写，其他小写)
+4.数字 LENGTH（列 | 字符串）-取得指定字符串的长度
+SELECT * FROM emp WHERE LENGTH(ename)=5;(选取ename这个字段5个字符的行)
+5.字符串 SUBSTR（列 | 字符串，开索，结索）
+SELECT ename,SUBSTR(ename,1,3) FROM emp; (选取字前三位)
+SELECT ename,SUBSTR(ename,LENGTH(ename)-2) FROM emp; (选取字后三位)
+SELECT ename,SUBSTR(ename,-3) FROM emp;(选取字后三位，Oracle特有的)
+6.字符串 REPLACE（列 | 字符串，旧内容，新内容）
+select replace('HELLO','L','X') from dual;(将HELLO里面的L替换为X)
+
+ 
+<<数值函数>>
+数字 ROUND（列 | 数字[,小数位]）-四舍五入
+select round(789.567213123) from dual;（790，四舍五入保留整数）
+select round(789.567213123,2) from dual;（789.57，四舍五入保留2位小数）
+select round(789.567213123,-2) from dual;（800，四舍五入保留2位整数）
+数字 TRUNC（列 | 数字 [,小数位]）-数据截取，4舍5入不进位
+select trunc(729.567213123) from dual;（结果729，抹去所有小数）
+select trunc(729.567213123,2) from dual;（结果729.56，抹去第二位小数以后的）
+select trunc(729.567213123,-2) from dual;（结果700，抹去整数二位）
+数字 MOD（列 | 数字，列 | 数字）-求余数
+select mod(10,3) from dual;（10÷3，余1）
+ 
+ 
+<<日期函数>>
+日期函数：首先要知道当前日期
+范例-验证伪列
+select SYSDATE from dual;包含日期和内容，只不过只显示日期
+select SYSTIMESTAMP from dual;
+伪列是所有表obj中默默存在的列。
+日期+数字=日期（若干天后的日期）
+日期-数字=日期（若干天前的日期）
+日期-日期=数字（日期间隔数）
+直接进行天数加法不准确，因为每月的天数不同，直接使用天数来实现月年的操作不准确
+准确日期操作：
+日期 ADD_MONTHS(列 | 日期，月数) ——— 指定日期上加月数后的日期
+数字 MONTHS_BETWEEN(列 | 日期，列| 日期) ——— 返回两个日期之间经历的月数
+日期 LAST_DAY(列 | 日期) ——— 取得日期所在月最后一天。
+日期NEXT_DAY(列|日期，星期X) ——— 下一个指定的一周时间数对应的日期。
+例子：求每位员工的雇佣年限（年月日）
+SELECT empno, ename,
+TRUNC(MONTHS_BETWEEN(SYSDATE, hiredate)/12) year,
+TRUNC(MOD(MONTHS_BETWEEN(SYSDATE, hiredate),12)) months,
+TRUNC(SYSDATE - ADD_MONTHS(hiredate,TRUNC(MONTHS_BETWEEN(SYSDATE, hiredate)))) day
+FROM emp;
+
+<<转换函数>>
+函数名称：
+TO_CHAR(列|日期|数字，转换格式)    将日期或者数字转化为数字
+TO_DATE(列|字符串，转换格式)       将字符串转化为日期
+TO_NUMBER(列|字符串)               将字符串转化为数字
+
+TO_CHAR()
+首先必须清楚转换格式
+日期：年（yyyy）、月（mm）、日（dd）
+时间：时（hh）、分（mi）、秒（ss）
+数字：任意数字、本地货币符号（L）
+SELECT TO_CHAR(SYSDATE,'YYYY-MM-DD') FROM DUAL;
+SELECT TO_CHAR(SYSDATE,'YYYY-MM-DD HH:MI:SS') FROM DUAL;
+24小时制
+SELECT  TO_CHAR(SYSDATE,'YYYY-MM-DD HH24:MI:SS') FROM DUAL;
+SELECT TO_CHAR(SYSDATE,'YYYY') YEAR,TO_CHAR(SYSDATE,'MM') MONTH,TO_CHAR(SYSDATE,'DD') DAY FROM DUAL;
+SELECT * FROM EMP WHERE TO_CHAR(HIREDATE,'MM')='02'
+SELECT TO_CHAR(343434343242425234，'L999,999,999,999,999,999,999') FROM DUAL;
+TO_DATE()
+SELECT TO_DATE('19880225','YYYY-MM-DD') DATE FROM DUAL;
+TO_NUMBER()
+SELECT TO_NUMBER(1)+TO_NUMBER(2) SUM FROM DUAL;
+ 
+ 
+<<通用函数>>
+1.处理null函数
+范围：要求查询出每个雇员的编号，姓名，基本工资，佣金，年薪
+select empno,ename,sal,comm,(sal+NVL(comm,0))*12 income from emp;
+NVL用于定义对值为NULL时的处理策略。
+2. decode()
+select ename,job,decode(job,'CLERK','办事员','SALESMAN','销售','MANAGER','---') from emp;
+ 
+ 
+<<表的连接>>
+①内连接（等值连接）：所有满足条件的数据都会被显示出来
+②外连接（左外连接、右连接、全外连接）：控制左表与右表的数据是否全部显示。
+首先向emp表中添加一行数据
+INSERT INTO emp(enpno,ename,job)
+VALUES(8888,'张三','CLERK');
+如果要让等值判断的左右两边有一边的数据可以全部显示出来，如果想要实现外连接，则需要使用“(+)”的语法完成；
+：左外连接：字段=字段(+)；+是补充空，显示左边有的值，右边空补充；
+：右外连接：字段(+)=字段；显示右边的值，左边+空补充。
+SELECT e.ename,e.job,m.ename 领导 FROM emp e,emp m WHERE e.mgr=m.empno(+);
+ 
+<<SQL:1999语法>>
+select [distinct] *| 列[别名]
+from 表名称1
+[CROSS JOIN 表名称2]
+[NATURAL JOIN 表名称2]
+[JOIN 表名称 ON（条件）|USING(字段)]
+[LEFT|RIGHT|FULL OUTER JOIN 表名称2]；
+实际上以上语法有多个部分组成，下面拆分来观察。
+1、交叉连接：CROSS JOIN,主要的功能是产生笛卡尔积，简单的实现多表查询：
+select * from emp cross join dept;
+2、自然连接：NATURAL JOIN,自动使用关联字段消除笛卡尔积（一般关联字段是外键，但此处它是以名称相同为主）,属于内连接概念
+select * from emp natural join dept;
+再返回查询结果时，默认将关联字段设置在第一列，重复的列内容不再显示
+3、USING子句：如果说要一张表里面有多个关联字段存在，可以使用USING子句明确的设置一个关联字段
+select * from emp join dept using(deptno);
+4、ON子句： 如果没有关联字段，则可以使用ON子句设置条件；
+select * from emp e join salgrade s on(e.sal between s.losal and s.hisal);
+5、外链接，在SQL：1999语法标准里明确的定义了数据表的左外连接、右外连接、全外连接的操作；
+范例：左外连接
+select * from emp left outer join dept using(deptno);
+范例：右外连接
+select * from emp right outer join dept using(deptno);
+范例：全外连接
+select * from emp full outer join dept using(deptno);
+ 
+ 
+<<数据集合操作>>
+之前都属于多张数据表的关联操作，但是数据的集合操作主要负责连接的是查询结果。 对于查询结果的集合操作提供有四种操作符：union、union all、intersect、minus，利用这几个符号可以实现多个查询语句的连接。
+【③控制要显示的数据列】SELECT [DISTINCT] * 列名称 别名...
+【①确定数据源】FROM 表名称 [别名]
+【②确定满足条件的数据行】WHERE过滤条件
+【④针对查询结果进行排序】ORDER BY 字段[ASC|DESC...]
+union|union all | intersect | minus
+【③控制要显示的数据列】SELECT [DISTINCT] * 列名称 别名...
+【①确定数据源】FROM 表名称 [别名]
+【②确定满足条件的数据行】WHERE过滤条件
+【④针对查询结果进行排序】ORDER BY 字段[ASC|DESC]...
+相当于将多个查询结果连接为一个查询结果返回，那么也就有一个明确的要求：多个查询结果返回的列的结构必须相同。
+范例：验证union操作
+select empno,ename,job from emp where deptno =10
+union
+select empno,ename,job from emp;
+结果是将两个查询结果合并在一起，但是union的操作特点是如果遇见了有相同的内容，那么不会重复显示。
+union all 则所有重复数据全部显示
+intersect 只显示重复的内容，取交集
+minus 返回一个差集，由第一个查询减去第二个查询
+select empno,ename,job from emp
+minus
+select empno,ename,job from emp where deptno =10;
+总结
+1、只要是多表查询永远存在笛卡尔积，所以优秀的系统设计的时候绝对不可能去考虑多表查询；
+2、多表查询时，必须存在有关联字段或是关联条件，否则无法进行多表查询；
+3、大部分情况下使用的都是内连接操作，外链接Oracle提供的控制是“（+）”；
+4、在Oracle之外的数据库（SQL Server、MySQL）那么久必须使用SQL：1999语法实现外链接操作；
+5、可以使用集合操作将多个查询结果合并到一起显示，但要求多个查询结果返回的结构必须相同。
+ 
+ 
+<<统计函数>>
+基础统计函数的使用；常用的五个（其他数据库都有的）
+2、分组统计操作的实现，要结合夺标查询使用分组统计。
+3.1统计函数
+count（*|字段）
+max（字段（日期或数字））
+min（字段（日期或数字））
+sum（数字字段）
+avg（数字字段）
+范例：查询所有雇员之中最高和最低工资
+select max(sal),min(sal) from emp;
+对于max和min的操作，除了可以使用数字之外也可以使用日期。
+范例：查询出所有雇员最早雇佣和最晚雇佣的雇佣日期。
+select max(hiredate),min(hiredate) from emp;
+范例：统计出所有雇员的总工资和平均工资
+select sum(sal),avg(sal) from emp;
+对于sum（）和avg（）两个函数只要是数值类型数据都可以使用。
+范例：要求统计出雇员的平均服务年限。
+select trunc(avg(months_between(sysdate,hiredate)/12)) from emp;
+面试题：请解释count（*）、 count（字段）、count（distinct字段）的区别？
+count（*）可以明确地返回表中的数据的个数，是最准确的；
+count（字段）不统计为null的数据个数， 如果某一列的数据没有空值，则结果与count（*）相同；
+count（distinct字段）：统计消除重复数据后的数据个数。
+select count(distinct job) from emp;
+<<分组查询>>
+【⑤确定要查询的数据列】SELECT[DISTINCT] 分组字段 [别名] ，... | 统计函数
+【①确定数据来源】FROM table1,table2,...
+【②针对于数据行的刷选】WHERE 过滤条件
+【③针对于数据实现分组】GROUP BY 分组字段1，分组字段2，...
+【④针对于分组后的数据进行帅选】HAVING 分组后的过滤条件
+【⑥针对于返回结果进行排序】ORDER BY[ASC|DESC]
+当部分数据具备某些共性时需要分组。分组使用group by。
+范例：统计出每个职位的名称、平均人数、平均工资。
+select job,count(empno),avg(sal) from emp group by job;
+以上就是按照基本语法结构实现的代码
+范例：要求查询出每个部门编号，以及每个部门的人数、最高与最低工资。
+select deptno,count(ename),max(sal),min(sal) from emp group by deptno;
+以上所选择的job和deptno两个字段都存在有重复数据，所以可分组。
+以上实现了分组操作，但对于分组操作严格来讲还是存在一些使用上的限制的，限制要求如下：
+限制一：在没有编写group by子句的时候（全表作为一组），select子句之中只允许出现统计函数，不允许出现任何的其他字段。
+错误代码：select count(empno),ename from emp;
+正确代码：select count(empno) from emp;
+在没有group by 子句时，select子句中不可以存在任何其他字段
+限制二 :在使用group by子句分组时，select子句之中只允许出现分组字段与统计函数，其他字段不允许出现。
+错误代码：select job,count(empno),ename from emp group by job;
+正确代码：select job,count(empno) from emp group by job;
+限制三：统计函数允许嵌套查询，但是嵌套后的统计查询中，select子句里面不允许出现任何的字段，包括分组字段，只能够使用嵌套的统计函数。
+错误代码：select deptno,max(avg(sal)) from emp group by deptno;
+正确代码：select max(avg(sal)) from emp group by deptno;
+以上的查询都是针对于单表数据的查询，而在分组操作的时候也可以进行多表查询。
+ 
+<<子查询>>
+对于子查询的非官方使用方式：
+1.where子句：子查询一般可反回单行单列，单行多列，多行单列数据
+2.having子句：子查询可反回单行单列，同时表示要使用统计函数。
+3.from子句：子查询可反回多行多列数据（表结构）。
+4.select子句：子查可反回单行单列，一般不使用。
+Where
+例:查询出低于公司平均工资的雇员信息
+SELECT AVG(sal) FROM emp;
+以上查询返回单行单列
+SELECT *FROM emp WHERE sal<(SELECT AVG(sal)FROM emp);
+范例：查询出低于公司平均工资的雇员信息
+select * from emp where sal<(select avg(sal) from emp);
+以上的子查询返回单行单列
+范例：查询出公司最早雇佣的雇员信息
+select * from emp where hiredate=(select min(hiredate) from emp);
+除了返回单行单列的内容之外，还可以返回单行多列，此类的操作一般不会经常使用。
+范例：查询与scott从事同一工作，并且工资相同的雇员信息。
+首先应该知道scott的工作和工资；
+select job,sal from emp where ename='SCOTT';
+需要有另外雇员信息在职位和工资上与SCOTT内容完全相同，由于此时返回的是单行多列的内容，所以需要使用（）进行描述。
+select * from emp where (job,sal)=(select job,sal from emp where ename='SCOTT') and ename!='SCOTT';
+Select*from emp where sal in(select sal from emp where job=’MANAGER’);
+IN操作一样结果，但NOT IN操作含NULL结果不返回任何数据.
+ 
+any操作，一共分为三种形式：
+=any：功能与in操作一样；
+>any：比子查询返回的最小值大；
+<any：比子查询返回的最大值小；
+select*from emp where sal(<、>、=) any(select sal from emp where job=’MANAGER’);
+all操作，分为两种形式：
+>all：比子查询返回的最大值大；
+<all：比子查询返回的最小值小；
+select*from emp where sal(<、>)all(select sal from emp where job=’manager’);
+Having
+例：查高于公司平均工资的职位名称，职位人数，平均工资
+Select job,count(empno),avg(sal)
+from emp
+group by job
+having avg(sal)>(select avg(sal) from emp);
+总结：子查询，首先考虑where或from子句里出现，其次having只会在统计函数使用，可忽略select
