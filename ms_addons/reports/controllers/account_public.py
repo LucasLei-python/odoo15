@@ -235,7 +235,7 @@ def saveFileUpdate(uid, file_content, filename):
 
 def loginwechat(code):
     import requests
-    import urllib
+    import urllib.parse
     import json
 
     # 向微信发请求验证
@@ -246,7 +246,7 @@ def loginwechat(code):
         'grant_type': 'authorization_code'
     }
     openid = ''
-    url = 'https://api.weixin.qq.com/sns/oauth2/access_token?' + urllib.urlencode(params)
+    url = 'https://api.weixin.qq.com/sns/oauth2/access_token?' + urllib.parse.urlencode(params)
     res = requests.get(url=url)
     if res.status_code == 200:
         data = json.loads(res.content)

@@ -80,10 +80,10 @@ class xlRepair(http.Controller):
         if not env:
             return no_token()
         try:
-            domain, domain_cs = [], []
+            domain, domain_cs, domain_test = [], [], []
             fields = eval(kw.get('fields',
                                  "[]"))
-            order = kw.get('order', "update_time desc")
+            order = kw.get('order', "init_time desc")
             data = ast.literal_eval(kw.get("data").replace('null', 'None'))
             offset = data.pop("page_no") - 1
             limit = data.pop("page_size")
@@ -101,11 +101,26 @@ class xlRepair(http.Controller):
                 domain_cs.append(('back_date', '>=', data.get('back_sdate')))
             if data and data.get('back_edate'):
                 domain_cs.append(('back_date', '<=', data.get('back_edate')))
+            if data and data.get('test_sdate'):
+                domain_test.append(('test_date', '>=', data.get('test_sdate')))
+            if data and data.get('test_edate'):
+                domain_test.append(('test_date', '<=', data.get('test_edate')))
+            if data and data.get('repair_content'):
+                domain_test.append(('repair_content', 'ilike', data.get('repair_content')))
             if domain_cs:
                 cs_res = env['repair.cs'].sudo().search_read(domain_cs)
                 if cs_res:
                     main_id = tuple(map(lambda x: x['review_id'][0], cs_res))
                     domain.append(('id', 'in', main_id))
+                else:
+                    domain.append(('id', '=', False))
+            if domain_test:
+                test_res = env['repair.testing'].sudo().search_read(domain_test)
+                if test_res:
+                    main_id = tuple(map(lambda x: x['review_id'][0], test_res))
+                    domain.append(('id', 'in', main_id))
+                else:
+                    domain.append(('id', '=', False))
             # if data and data.get("order_field"):
             #     order = data.get("order_field") + " " + data.get("order_type")
             records_ref = env['xlcrm.users'].sudo().search([("id", '=', env.uid)])
@@ -121,7 +136,7 @@ class xlRepair(http.Controller):
                 domain += [('init_user', 'in', records_ref.child_ids_all.ids)]
                 # domain += [('customer_service', 'ilike', records_ref.id)]
             count = env[model].sudo().search_count(domain)
-            result = env[model].sudo().search_read(domain=domain)
+            result = env[model].sudo().search_read(domain=domain, order=order)
             res_data = []
             for item in result:
                 res_tmp = {}
@@ -259,7 +274,7 @@ class xlRepair(http.Controller):
             from .connect_psql import Psql
             psql = Psql("ErpCrmDB")
             result = psql.query(
-                'select cCusName,cCusPerson,cCusHand,cPersonName,cCusOAddress From v_Customer_CCF')
+                'select cCusName,cCusPerson,cCusHand,cPersonName,cCusOAddress,cCusType From v_Customer_CCF')
             psql.close()
             message = "success"
             success = True

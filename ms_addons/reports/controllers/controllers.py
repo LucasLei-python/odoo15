@@ -2372,7 +2372,7 @@ class Reports(http.Controller):
         if not env:
             return no_token()
         try:
-            import requests, urllib, time, json
+            import requests, urllib.parse, time, json
             data = ast.literal_eval(kw.get("data"))
             model = 'report.pobase'
             url = "http://192.168.0.159:8049"
@@ -2384,7 +2384,7 @@ class Reports(http.Controller):
                               'sLoginDate': datetime.datetime.strftime(datetime.date.today(), '%Y-%m-%d'),
                               'sUserID': UserID, 'sPassword': Password}}
 
-            response = requests.get(url=url + '/api/Login?%s' % urllib.urlencode(params))
+            response = requests.get(url=url + '/api/Login?%s' % urllib.parse.urlencode(params))
 
             if response.status_code == 200:
                 content = response.json()

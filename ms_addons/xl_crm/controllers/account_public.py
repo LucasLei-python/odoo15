@@ -555,24 +555,27 @@ def getSigner(env, result, type, action):
 
 
 def loginwechat(code):
-    import requests
-    import urllib
-    import json
+    try:
+        import requests
+        import urllib.parse
+        import json
 
-    # 向微信发请求验证
-    params = {
-        'code': code,
-        'appid': 'wx513547ab52038ad1',
-        'secret': '2dd9eb0540cf554d5682a4dcea36a267',
-        'grant_type': 'authorization_code'
-    }
-    openid = ''
-    url = 'https://api.weixin.qq.com/sns/oauth2/access_token?' + urllib.urlencode(params)
-    res = requests.get(url=url)
-    if res.status_code == 200:
-        data = json.loads(res.content)
-        openid = data.get('openid')
-    return openid
+        # 向微信发请求验证
+        params = {
+            'code': code,
+            'appid': 'wx513547ab52038ad1',
+            'secret': '2dd9eb0540cf554d5682a4dcea36a267',
+            'grant_type': 'authorization_code'
+        }
+        openid = ''
+        url = 'https://api.weixin.qq.com/sns/oauth2/access_token?' + urllib.parse.urlencode(params)
+        res = requests.get(url=url)
+        if res.status_code == 200:
+            data = json.loads(res.content)
+            openid = data.get('openid')
+        return openid
+    except Exception as e:
+        raise Exception(str(e))
 
 
 def updateAccountReview(model, data, env):
@@ -858,18 +861,18 @@ def write_lg_signer(env, review_id):
 
 def get_token(env, uid):
     serve = odoo.tools.config['serve_url']
-    db = odoo.tools.config['db_user']
+    db = odoo.tools.config['db_name']
     # username = kw.pop('username')
     # password = kw.pop('password')
     user_obj = env['xlcrm.users'].sudo().search([('id', '=', uid)], limit=1)
     username = user_obj["username"]
-    token = base64.urlsafe_b64encode(','.join([serve, db, username, str(uid), str(int(time.time()))])).replace(
-        '=', '')
+    token = base64.urlsafe_b64encode((','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
+        b'=', b'').decode()
     token = {
         'token': token,
         'group_id': user_obj['group_id'].id,
         'token_expires': int(time.time()),
-        'refresh': base64.urlsafe_b64encode(token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)),
+        'refresh': base64.urlsafe_b64encode((token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)).encode()).decode(),
         'refresh_expires': int(time.time()) + 24 * 60 * 60 * 7
     }
     user = {

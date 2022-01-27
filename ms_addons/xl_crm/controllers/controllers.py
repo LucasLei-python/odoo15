@@ -6024,7 +6024,7 @@ class XlCrm(http.Controller, Base):
         try:
             serve = odoo.tools.config['serve_url']
             orgin = request.httprequest.environ["HTTP_ORIGIN"]
-            db = odoo.tools.config['db_user']
+            db = odoo.tools.config['db_name']
             username = kw.pop('username')
 
             password = kw.pop('password')
@@ -6045,13 +6045,13 @@ class XlCrm(http.Controller, Base):
                 return json_response(rp)
 
             uid = user_obj['id']
-            token = base64.urlsafe_b64encode(','.join([serve, db, username, str(uid), str(int(time.time()))])).replace(
-                '=', '')
+            token = base64.urlsafe_b64encode((','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
+                b'=', b'').decode()
             token = {
                 'token': token,
                 'group_id': user_obj['group_id'].id,
                 'token_expires': int(time.time()),
-                'refresh': base64.urlsafe_b64encode(token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)),
+                'refresh': base64.urlsafe_b64encode((token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)).encode()).decode(),
                 'refresh_expires': int(time.time()) + 24 * 60 * 60 * 7
             }
             user = {
@@ -6152,7 +6152,7 @@ class XlCrm(http.Controller, Base):
                 from . import account_public, connect_mssql
                 openid = account_public.loginwechat(code)
                 if openid:
-                    db = odoo.tools.config['db_user']
+                    db = odoo.tools.config['db_name']
                     # registry = RegistryManager.get(db)
                     cr = registry(db).cursor()
                     env = api.Environment(cr, 1, {})
@@ -8937,9 +8937,11 @@ class XlCrm(http.Controller, Base):
             return no_token()
         try:
             from . import connect_mssql
+            print('===========start=======')
             sql = "select cCusCode,cCusName,cCusType,cCusAbbName from v_Customer_CCF"
             mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
+            print('===========end=======')
             for res in res_sql:
                 tmp = {}
                 tmp['cCusCode'] = res[0]
@@ -8952,7 +8954,7 @@ class XlCrm(http.Controller, Base):
             result, success, message = '', False, str(e)
         finally:
             env.cr.close()
-
+        print('===========finally=======')
         rp = {'status': 200, 'message': message, 'data': result}
         return json_response(rp)
 
@@ -9063,7 +9065,7 @@ def binary_content(xmlid=None, model='xlcrm.documents', id=None, field='db_datas
 
 def get_token(uid):
     serve = odoo.tools.config['serve_url']
-    db = odoo.tools.config['db_user']
+    db = odoo.tools.config['db_name']
     # username = kw.pop('username')
     # password = kw.pop('password')
     user_obj = request.env['xlcrm.users'].sudo().search([('id', '=', uid)], limit=1)
