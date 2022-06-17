@@ -25,6 +25,8 @@ class Xlaccountpm(models.Model):
     brandname = fields.Char('品牌')
     agree_loa = fields.Char('是否同意loa')
     material_profit = fields.Char('料号对应毛利率')
+    compliance = fields.Char('该客户是否需要合规许可证号')
+    compliance_material = fields.Char('该料号是否需要合规许可证号')
     _sql_constraints = [
         ('review_id_uniq', 'unique (review_id,brandname)', "已经提交"),
     ]

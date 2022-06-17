@@ -89,6 +89,8 @@ class xlRepair(http.Controller):
             limit = data.pop("page_size")
             if data and data.get('code'):
                 domain.append(('code', 'ilike', data.get('code')))
+            if data and data.get('maintenance_model'):
+                domain.append(('maintenance_model', 'ilike', data.get('maintenance_model')))
             if data and data.get('customer'):
                 domain.append(('customer', 'ilike', data.get('customer')))
             if data and data.get('serial_number'):
@@ -105,6 +107,8 @@ class xlRepair(http.Controller):
                 domain_test.append(('test_date', '>=', data.get('test_sdate')))
             if data and data.get('test_edate'):
                 domain_test.append(('test_date', '<=', data.get('test_edate')))
+            if data and data.get('functional_testing'):
+                domain_test.append(('functional_testing', 'ilike', data.get('functional_testing')))
             if data and data.get('repair_content'):
                 domain_test.append(('repair_content', 'ilike', data.get('repair_content')))
             if domain_cs:
@@ -174,13 +178,16 @@ class xlRepair(http.Controller):
                 res_tmp['charge_mount'] = ''
                 res_tmp['back_date'] = ''
                 res_tmp['remark'] = ''
+                res_tmp['products'] = []
                 ts = env['repair.testing'].sudo().search_read([('review_id', '=', item['id'])])
                 if ts:
                     ts = ts[0]
                     totalcount = env['repair.products'].sudo().search_read([('ts_id', '=', ts['id'])])
+
                     if totalcount:
                         res_tmp['totalcount'] = sum(
                             [int(item_count['count']) if item_count['count'] else 0 for item_count in totalcount])
+                        res_tmp['products'] = totalcount
                     res_tmp['functional_testing'] = ts['functional_testing']
                     res_tmp['test_date'] = ts['test_date']
                     res_tmp['led_display'] = ts['led_display']
@@ -205,9 +212,16 @@ class xlRepair(http.Controller):
                     res_tmp['back_date'] = cs['back_date']
                     res_tmp['remark'] = cs['remark']
                 res_data.append(res_tmp)
-            if data.get("order_field"):
-                st = False if not data.get("order_type") or data.get("order_type") == "asc" else True
-                res_data.sort(key=lambda x: x[data.get("order_field")], reverse=st)
+            order_field = data.get("order_field")
+            order_type = data.get("order_type")
+            if order_field:
+                st = False if not order_type or order_type == "asc" else True
+                key = lambda x: x[order_field] if x[order_field] else ''
+                if order_field in ('create_date', 'back_date', 'test_date'):
+                    key = lambda x: x[order_field] if x[order_field] else datetime.date(
+                        datetime.strptime(
+                            '1900-01-01', '%Y-%m-%d'))
+                res_data.sort(key=key, reverse=st)
             start = offset * limit
             end = count if count <= offset * limit + limit else offset * limit + limit
             result = res_data[start:end]
@@ -686,9 +700,7 @@ class xlRepair(http.Controller):
 
             result = env['repair.baseinfo'].sudo().search_read([('id', '=', review_id)])
             for r in result:
-                for f in r.keys():
-                    if f == "station_no":
-                        r["station_desc"] = repair.getStionsDesc(r[f])
+                r["station_desc"] = repair.getStionsDesc(r["station_no"])
                 ts = env['repair.testing'].sudo().search_read([('review_id', '=', r['id'])])
                 if ts:
                     totalcount = env['repair.products'].sudo().search_read([('ts_id', '=', ts[0]['id'])])

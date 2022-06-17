@@ -68,6 +68,6 @@ def getCode():
     code = 100000
     while res:
         code = random.randint(100000, 999999)
-        mssql = connect_mssql.Mssql('wechart')
+        mssql = connect_mssql.connect_mssql.Mssql('wechart')
         res = mssql.query('select id from Wx_email where Code=%d' % code)
     return code

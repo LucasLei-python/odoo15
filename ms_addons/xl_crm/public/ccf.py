@@ -7,7 +7,8 @@ import json, base64
 
 
 class BaseInfo:
-    def get_stations_desc(self, station):
+    @staticmethod
+    def get_stations_desc(station=None):
         tar_dict = {
             1: '申请者填单',
             5: 'Sales签核',
@@ -29,9 +30,10 @@ class BaseInfo:
             99: '签核完成',
             28: '回签'
         }
-        return tar_dict[int(station)]
+        return tar_dict[int(station)] if station else tar_dict
 
-    def get_staions(self, desc):
+    @staticmethod
+    def get_staions(desc=None):
         tar_dict = {
             'Base': 1,
             'Sales': 5,
@@ -50,9 +52,10 @@ class BaseInfo:
             'Manage': 50,
             'ChairMan': 55
         }
-        return tar_dict[desc]
+        return tar_dict[desc] if desc else tar_dict
 
-    def get_model(self, station_no, type=None):
+    @staticmethod
+    def get_model(station_no, type=None):
         tar_dict = {
             1: "base",
             5: "sales",
@@ -75,7 +78,8 @@ class BaseInfo:
             return tar_dict
         return "xlcrm.account." + tar_dict[int(station_no)]
 
-    def get_next_station(self, current_no):
+    @staticmethod
+    def get_next_station(current_no):
         dict_next = {1: 5, 5: 10, 10: 15, 15: 16, 16: 20, 20: 21, 21: 25, 25: 30, 30: 35, 35: 36, 36: 40, 40: 45,
                      45: 46,
                      46: 50,
@@ -83,7 +87,8 @@ class BaseInfo:
                      55: 99}
         return dict_next[int(current_no)]
 
-    def get_forward_station(self, current_no):
+    @staticmethod
+    def get_forward_station(current_no):
         dict_next = {5: 1, 10: 5, 15: 10, 16: 15, 20: 16, 21: 20, 25: 21, 30: 25, 35: 30, 36: 35, 40: 36, 45: 40,
                      46: 45,
                      50: 46,
@@ -91,7 +96,8 @@ class BaseInfo:
                      99: 55}
         return dict_next[int(current_no)]
 
-    def get_staions_reject(self, desc):
+    @staticmethod
+    def get_staions_reject(desc):
         tar_dict = {
             'base': 1,
             'sales': 5,
@@ -112,7 +118,8 @@ class BaseInfo:
         }
         return tar_dict[desc]
 
-    def get_station_code(self, station):
+    @staticmethod
+    def get_station_code(station):
         tar_dict = {
             1: 'Base',
             5: 'Sales',
@@ -138,7 +145,8 @@ class BaseInfo:
         dict_tar = self.get_model(station_no, type='in')
         return dict(filter(lambda x: x[0] <= station_no, dict_tar.items()))
 
-    def get_stations_reject(self, desc):
+    @staticmethod
+    def get_stations_reject(desc):
         tar_dict = {
             'base': 1,
             'sales': 5,
@@ -580,24 +588,31 @@ class CCF(BaseInfo):
 
     def next_form(self, model, data, env):
         try:
-            review_id, station_no, record_status = data.get('review_id'), data.get("station_no"), data.get(
+            review_id, station_no, si_station, record_status = data.get('review_id'), data.get("station_no"), data.get(
+                "si_station"), data.get(
                 'record_status')
-            station_no = int(station_no)
-            if station_no == 1:
+            station_no, si_station = int(station_no), int(si_station) if si_station else int(station_no)
+            data['station_no'] = si_station
+            if si_station == 1:
                 data.pop('station_no')
                 data.pop('signer')
                 data['init_nickname'] = ''
                 review_id = data.get('id')
+                env['xlcrm.account.affiliates'].sudo().search([('account', '=', review_id)]).unlink()
+                for item in data['affiliates']:
+                    item['account'] = review_id
+                    self.create('xlcrm.account.affiliates', item, env)
                 env[model].sudo().browse(review_id).write(data)
-            station_model = self.get_model(station_no)
+            station_model = self.get_model(si_station)
             domain = [('review_id', '=', review_id)]
-            if station_no not in (35, 40):
+            if si_station not in (35, 40):
                 domain.append(('init_user', '=', env.uid))
             brandname = data.get('brandname')
-            if station_no in (20, 21, 25, 30):
+            if si_station in (20, 21, 25, 30):
                 domain.append(('brandname', '=', brandname))
             result = env[station_model].sudo().search_read(domain=domain)
             if result:
+                model_id = result[0]['id']
                 data.pop('init_nickname', None)
                 data.pop('record_status', None)
                 data["update_user"] = env.uid
@@ -608,16 +623,21 @@ class CCF(BaseInfo):
                 data["init_user"], data["update_user"] = env.uid, env.uid
                 data["init_time"] = datetime.datetime.now() + datetime.timedelta(hours=8)
                 data["update_time"] = datetime.datetime.now() + datetime.timedelta(hours=8)
-                self.create(station_model, data, env)
+                model_id = self.create(station_model, data, env)
+            if si_station == 20:
+                env['xlcrm.material.profit'].sudo().search([('pm_id', '=', model_id)]).unlink()
+                for item_ in data['material_profit']:
+                    item_['pm_id'] = model_id
+                    self.create('xlcrm.material.profit', item_, env)
             if record_status == 1:
                 data_main = {}
-                signed_temp, signed_temp_ = self.update_signed(review_id, station_no, brandname, env)
+                signed_temp, signed_temp_ = self.update_signed(review_id, si_station, brandname, env)
                 data_main['station_no'], next_signer, data_main[
                     'station_desc'], risk_leader_email = self.get_next_singer(
-                    review_id, signed_temp, signed_temp_, env)
+                    review_id, station_no, signed_temp, signed_temp_, env)
                 data_main['signer'] = ',%s,' % ','.join(next_signer).replace(' ', '') if next_signer else ''
                 data_main['status_id'] = 3 if data_main['station_no'] == 99 else 2
-                if station_no == 5:
+                if si_station == 5:
                     self.update_lg_signer(review_id, env, data.get('loa'))
                 if next_signer:
                     uid = next_signer
@@ -642,7 +662,7 @@ class CCF(BaseInfo):
 
     def update_signed(self, review_id, sign_station, brandname, env):
         signed_temp, signed_temp_ = 'N', 'N'
-        station_no = env['xlcrm.account'].sudo().search_read([('id', '=', review_id)])[0]['station_no']
+        # station_no = env['xlcrm.account'].sudo().search_read([('id', '=', review_id)])[0]['station_no']
         # if station_no == 28:
         sign_back = env['xlcrm.account.partial'].sudo().search_read(
             [('review_id', '=', review_id)], order='init_time desc', limit=1)
@@ -703,10 +723,10 @@ class CCF(BaseInfo):
             self.update('xlcrm.account.signers', res['id'], temp_data, env)
         return signed_temp_
 
-    def get_next_singer(self, review_id, signed_temp, signed_temp_, env):
+    def get_next_singer(self, review_id, station_no, signed_temp, signed_temp_, env):
         next_station, next_signer, station_desc, risk_leader_email = 0, '', '', ''
         back_sign = False
-        station_no = env['xlcrm.account'].sudo().search_read([('id', '=', review_id)])[0]['station_no']
+        # station_no = env['xlcrm.account'].sudo().search_read([('id', '=', review_id)])[0]['station_no']
         while not next_signer:
             if station_no == 28:
                 sign_back = env['xlcrm.account.partial'].sudo().search_read(
@@ -952,15 +972,49 @@ class CCF(BaseInfo):
                 res_lg = res_lg[0]
                 r['consignee'] = res_lg['consignee']
             res_pm = env['xlcrm.account.pm'].sudo().search_read([('review_id', '=', r['id'])],
-                                                                fields=['brandname', 'profit'])
+                                                                fields=['brandname', 'profit', 'material_profit'])
+            profit = []
             if res_pm:
-                profit = res_pm
+                for res_ in res_pm:
+                    if not res_['material_profit']:
+                        profit.append({'material': res_['brandname'], 'profit': res_['profit']})
+                    else:
+                        profit += eval(res_['material_profit'])
+
             r['brand_profit'] = profit
             res_csvp = env['xlcrm.account.csvp'].sudo().search_read([('review_id', '=', r['id'])])
             if res_csvp:
                 res_csvp = res_csvp[0]
                 r['others'] = res_csvp['content']
+            self.__get_signer_desc(r)
+
         return res
+
+    def __get_signer_desc(self, r):
+        try:
+            import re
+            com = re.compile(r'(.*?)\)')
+            r['station_desc'] = r['station_desc'] if r['station_desc'] else ''
+            res_desc = {value: key for key, value in self.get_stations_desc().items()}
+            res_station = {value: key for key, value in self.get_staions().items()}
+            desc = map(lambda x: f'{x})', com.findall(r['station_desc']))
+            products = eval(r['products']) if r['products'] else []
+            r['signer_desc'] = r['station_desc']
+            for des in desc:
+                r['signer_desc'] = ''
+                _desc, signers = re.findall(r'(.*?)\(', des) + re.findall(r'\((.*?)\)', des)
+                _station = res_desc[_desc]
+                _station_des = res_station[_station]
+                signer_ = signers
+                if _station in range(20, 31):
+                    signer_ = ''
+                    for signer in signers.split(','):
+                        brand_name = ','.join(
+                            map(lambda x: x['brandname'], filter(lambda x: f'{signer}(' in x[_station_des], products)))
+                        signer_ += f'{signer}-{brand_name}'
+                r['signer_desc'] += f'{_desc}({signer_})'
+        except Exception as e:
+            raise repr(e)
 
     def get_cs(self, review_id, env):
         res_ = {"payment": "", "on_time": ""}
@@ -1068,6 +1122,7 @@ class CCF(BaseInfo):
             "ccuscode": obj_temp["ccuscode"] if obj_temp["ccuscode"] else '',
             "ke_company": obj_temp["ke_company"],
             "kw_address": obj_temp["kw_address"],
+            "registered_address": obj_temp["registered_address"],
             "kf_address": obj_temp["kf_address"],
             "krc_company": obj_temp["krc_company"],
             'kre_company': obj_temp["kre_company"],
@@ -1114,12 +1169,13 @@ class CCF(BaseInfo):
             'credit_limit_now': obj_temp['credit_limit_now'] if obj_temp[
                 'credit_limit_now'] else '',
             'current_account_period': kwargs['current_account_period'],
+            'cusdata':kwargs['cusdata'],
             'protocol_code': obj_temp['protocol_code'] if obj_temp[
                 'protocol_code'] else '',
             'protocol_detail': obj_temp['protocol_detail'] if obj_temp[
                 'protocol_detail'] else '',
             'cs': obj_temp['cs'],
-            'affiliates': eval(obj_temp['affiliates']) if obj_temp['affiliates'] else [],
+            'affiliates': self.get_affiliates(obj_temp['id'], env),
             'payment': eval(obj_temp['payment']) if obj_temp['payment'] else [],
             'overdue': eval(obj_temp['overdue']) if obj_temp['overdue'] else [],
             're_payments': eval(obj_temp['re_payments']) if obj_temp['re_payments'] else [],
@@ -1143,6 +1199,12 @@ class CCF(BaseInfo):
             'payment_method_apply_new': obj_temp['payment_method_apply_new']
         }
         return ret_temp
+
+    @staticmethod
+    def get_affiliates(review_id, env):
+        results = env['xlcrm.account.affiliates'].sudo().search_read([('account', '=', review_id)])
+
+        return results
 
     def get_partial_signer(self, to_station, to_brand, review_id, env):
         signer, station_desc = [], ''
@@ -1265,12 +1327,15 @@ class CCF(BaseInfo):
             res['look_profit'] = look_profit
 
     @staticmethod
-    def _get_pm_profit(res_tmp):
+    def _get_pm_profit(res_tmp, env):
         for res_ in res_tmp:
-            if res_['profit']:
-                res_['material_profit'] = [{'material': '', 'profit': res_['profit']}]
-            elif res_['material_profit']:
-                res_['material_profit'] = eval(res_['material_profit'])
+            res_['material_profit'] = env['xlcrm.material.profit'].sudo().search_read([('pm_id', '=', res_['id'])],
+                                                                                      fields=['material', 'profit',
+                                                                                              'compliance'])
+            # if res_['profit']:
+            #     res_['material_profit'] = [{'material': '', 'profit': res_['profit']}]
+            # elif res_['material_profit']:
+            #     res_['material_profit'] = eval(res_['material_profit'])
 
     @staticmethod
     def _get_sign_brand_name(products):
@@ -1279,28 +1344,83 @@ class CCF(BaseInfo):
 
     @staticmethod
     def insert_brandnamed_toU8(res):
-        ccustype = res['a_company']
-        company_res = request.env['xlcrm.user.ccfnotice'].sudo().search_read([('a_company', '=', ccustype)])
-        companycode = company_res[0]['a_companycode'] if company_res else ''
-        ccuscode = res['ccuscode']
-        ccusname = res['kc_company']
-        products = eval(res['products']) if res['products'] else []
-        data = []
-        from . import connect_mssql
-        mssql = connect_mssql.Mssql('sales_')
-        mssql.in_up_de("delete from ccf_brandnamed where companycode='%s' and ccuscode='%s'" % (companycode, ccuscode))
-        for item in products:
-            brandname = item.get('brandname').decode('utf-8') if item.get('brandname') else ''
-            material = item.get('material').decode('utf-8') if item.get('material') else ''
-            if material:
-                for mat in material:
-                    data.append((ccustype, companycode, ccuscode, ccusname, brandname, mat))
-            else:
-                data.append((ccustype, companycode, ccuscode, ccusname, brandname, ''))
+        try:
+            ccustype = res['a_company']
+            company_res = request.env['xlcrm.user.ccfnotice'].sudo().search_read([('a_company', '=', ccustype)])
+            companycode = company_res[0]['a_companycode'] if company_res else ''
+            ccuscode = res['ccuscode']
+            ccusname = res['kc_company']
+            products = eval(res['products']) if res['products'] else []
+            data = []
+            from . import connect_mssql
+            mssql = connect_mssql.Mssql('sales_')
+            mssql.in_up_de("delete from ccf_brandnamed where companycode='%s' and ccuscode='%s'" % (companycode, ccuscode))
+            for item in products:
+                brandname = item.get('brandname') if item.get('brandname') else ''
+                material = item.get('material') if item.get('material') else ''
+                if material:
+                    for mat in material:
+                        data.append((ccustype, companycode, ccuscode, ccusname, brandname, mat))
+                else:
+                    data.append((ccustype, companycode, ccuscode, ccusname, brandname, ''))
 
-        mssql.batch_in_up_de(
-            [[
-                "insert into ccf_brandnamed(ccustype,companycode,ccuscode,ccusname,brandname,material_no)values(%s,%s,%s,%s,%s,%s)",
-                data]])
-        mssql.commit()
-        mssql.close()
+            mssql.batch_in_up_de(
+                [[
+                    "insert into ccf_brandnamed(ccustype,companycode,ccuscode,ccusname,brandname,material_no)values(%s,%s,%s,%s,%s,%s)",
+                    data]])
+            mssql.commit()
+            mssql.close()
+        except Exception as e:
+            print('=======',e)
+
+    @staticmethod
+    def insert_brandlimit_toU8(review_id, env):
+        res = env['xlcrm.account'].sudo().browse(review_id)
+        doc = env['xlcrm.documents'].sudo().search(
+            [('res_id', '=', review_id), ('res_model', '=', 'xlcrm.account'), ('description', '!=', '')])
+        ccuscode = res.ccuscode
+        company_res = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', res.a_company)],
+                                                                order='write_date desc')
+        if ccuscode and company_res and res.status_id == 3:
+            editor = res.init_user.nickname
+            editdate = res.update_time
+            pm_res = env['xlcrm.account.pm'].sudo().search([('review_id', '=', res['id'])])
+            for p_res in pm_res:
+                if p_res and pm_res.compliance == '是':
+                    from . import connect_mssql
+                    brand_name, init_user, init_time = p_res.brandname.split('_index')[0].replace('amp;', '&').replace(
+                        'eq;', '=').replace('plus;', '+').replace('per;',
+                                                                  '%'), p_res.init_user.nickname, p_res.init_time
+                    auditer, auditdate = init_user if doc else '', datetime.datetime.strftime(doc[0].write_date,
+                                                                                              '%Y-%m-%d') if doc else ''
+                    con_str = '154_999' if odoo.tools.config["enviroment"] == 'PRODUCT' else '158_999'
+                    mssql = connect_mssql.Mssql(con_str)
+                    data = []
+                    mssql.in_up_de(
+                        f"delete from EF_BrandLimit where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'")
+                    mssql.in_up_de("insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
+                                   f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
+                    if pm_res.compliance_material == '是':
+                        material = env['xlcrm.material.profit'].sudo().search_read(
+                            [('pm_id', '=', p_res.id), ('compliance', '=', '是')], fields=['material', 'init_time'])
+                        for item in material:
+                            material = item.get('material').replace('amp;', '&').replace('eq;', '=').replace('plus;',
+                                                                                                             '+').replace(
+                                'per;', '%')
+                            start_date = datetime.datetime.strftime(editdate, '%Y-%m-%d')
+                            end_date = datetime.datetime.strftime(editdate.replace(year=editdate.year + 99), '%Y-%m-%d')
+                            doc_material = list(filter(lambda x: material in x.description.split('，'), doc))
+                            auditer,auditdate = auditer if doc_material else '',doc_material[0].write_date if doc_material else ''
+                            if material:
+                                data.append((company_res[0].a_companycode, ccuscode, material,
+                                             start_date,end_date, editor,
+                                             start_date, auditer,
+                                             datetime.datetime.strftime(auditdate, '%Y-%m-%d') if auditdate else ''))
+
+                    mssql.batch_in_up_de(
+                        [["delete from EF_InvPermit where companyCode=%s and cCusCode=%s and cInvCode=%s",
+                          list(map(lambda x: (x[0], x[1],x[2]), data))], [
+                             "insert into EF_InvPermit(companyCode,cCusCode,cInvCode,cStartDate,cEndDate,cEditor,cEditDate,cAuditer,cAuditDate)values(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                             data]])
+                    mssql.commit()
+                    mssql.close()

@@ -11,6 +11,7 @@
     'website': 'http://www.sdosoft.com',
     'category': 'Sales',
     'data': [
+        'data/ir_cron.xml'
     ],
     'auto_install': False,
     'installable': True,

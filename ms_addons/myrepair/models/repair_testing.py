@@ -28,3 +28,4 @@ class Testing(models.Model):
     update_user = fields.Many2one('xlcrm.users', store=True, string='更新者')
     update_time = fields.Datetime(string='更新时间', default=lambda self: fields.Datetime.utc_now(self))
     record_status = fields.Integer(string='提交状态', default=0)
+    warranty = fields.Char()

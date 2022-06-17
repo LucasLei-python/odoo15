@@ -14,6 +14,8 @@ class XlaccountPmm(models.Model):
     update_nickname = fields.Char(related='update_user.nickname', store=False, string='签核人昵称')
     station_no=fields.Integer('签核站别')
     brandname = fields.Char('品牌')
+    agree = fields.Char('申请账期是否同意')
+    suggestion = fields.Char('建议')
     _sql_constraints = [
         ('review_id_uniq', 'unique (review_id,brandname)', "已经提交"),
     ]

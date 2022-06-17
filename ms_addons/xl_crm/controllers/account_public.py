@@ -141,7 +141,7 @@ class Stations:
                 5: "sales",
                 10: "customer",
                 15: "salesm",
-                16: "selesvp",
+                16: "salesvp",
                 20: "pm",
                 21: "pmins",
                 25: "pur",
@@ -940,7 +940,7 @@ def getaccountlistold(r, env, ap):
 
 def sendWechat(subject, to_wechart, url, content, init_user, init_time):
     from . import connect_mssql
-    wechart = connect_mssql.Mssql('wechart')
+    wechart = connect_mssql.connect_mssql.Mssql('wechart')
     send_wechart = wechart.in_up_de(
         "insert into dbo.BusinessTemplateMsg(templateType,userId,url,first,key1,key2)values('" + subject + "','" + to_wechart + "','" + url + "', '" + content + "', '" + init_user + "', '" + init_time + "')")
 

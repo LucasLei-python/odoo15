@@ -7,7 +7,8 @@ class MaterialProfit(models.Model):
     _name = 'xlcrm.material.profit'
     pm_id = fields.Integer('表单ID')
     material = fields.Char('料号')
-    profit = fields.Char('毛利率')
+    profit = fields.Float('毛利率')
+    compliance = fields.Char('是否需要合规许可证号')
     init_time = fields.Datetime(string='创建时间', default=lambda self: fields.Datetime.utc_now(self))
     init_user = fields.Many2one('xlcrm.users', store=True, string='创建者')
     update_time = fields.Datetime('更新时间')

@@ -1480,6 +1480,7 @@ class XlCrm(http.Controller, Base):
                         "kc_company": obj_temp["kc_company"],
                         "ke_company": obj_temp["ke_company"],
                         "kw_address": obj_temp["kw_address"],
+                        "registered_address": obj_temp["registered_address"],
                         "kf_address": obj_temp["kf_address"],
                         "krc_company": obj_temp["krc_company"],
                         'kre_company': obj_temp["kre_company"],
@@ -1797,12 +1798,18 @@ class XlCrm(http.Controller, Base):
         env = authenticate(token)
         if not env:
             return no_token()
-        domain = []
+        domain, domain_c = [], []
         if kw.get("customer"):
-            domain.append(('kc_company', '=', kw.get("customer")))
-            domain = searchargs(domain)
+            customer = self.literal_eval(kw.get("customer"))
+            domain_base = [('status_id', '>', 1)]
+            domain = [('kc_company', '=', customer.get("kc_company")), ('a_company', '=', customer.get("a_company")),
+                      ]
+            domain_c = [('kc_company', '=', customer.get("kc_company"))]
             try:
-                result = request.env[model].sudo().search_read(domain, order='init_time desc', limit=1)
+                result = request.env[model].sudo().search_read(domain + domain_base, order='init_time desc', limit=1)
+                if not result:
+                    result = request.env[model].sudo().search_read(domain_c + domain_base, order='init_time desc',
+                                                                   limit=1)
                 if result:
                     obj_temp = result[0]
                     model_fields = request.env[model].fields_get()
@@ -1875,6 +1882,7 @@ class XlCrm(http.Controller, Base):
                         "kc_company": obj_temp["kc_company"],
                         "ke_company": obj_temp["ke_company"],
                         "kw_address": obj_temp["kw_address"],
+                        "registered_address": obj_temp["registered_address"],
                         "kf_address": obj_temp["kf_address"],
                         "krc_company": obj_temp["krc_company"],
                         'kre_company': obj_temp["kre_company"],
@@ -2008,18 +2016,20 @@ class XlCrm(http.Controller, Base):
                 dict_model = account.getModelByStaion(station_no)
                 base_model = 'xlcrm.account'
                 for value in dict_model.values():
+                    filters = ['content', 'update_user', 'update_time']
                     if value == "lg":  # 法务部查找栏位多些
                         filters += ['rd_license_q', 'rd_receipt', 'rd_receipt_q', 'rd_receipt_address',
                                     'rd_receipt_address_q', 'rd_agree']
-
+                    if value == 'base':
+                        filters.remove('content')
                     tar_model = base_model + '.' + value
                     tar_domain = [('review_id', '=', id)]
                     result[value] = env[tar_model].sudo().search_read(tar_domain, filters)
                     # result_copy=result.deepcopy()
                     if result[value]:
-                        signer = [env['xlcrm.users'].sudo().search_read([('id', '=', item['update_user'][0])],
-                                                                        ['nickname'])[0]['nickname'] + ' ' + item[
-                                      'update_time'] for item in result[value]]
+                        signer = [
+                            f"{env['xlcrm.users'].sudo().search_read([('id', '=', item['update_user'][0])], ['nickname'])[0]['nickname']} {item['update_time']}"
+                            for item in result[value]]
                         # signer='-'.join(signer)
                         # 判断是否回签，回签后是否已签
                         signer_id = [item['update_user'][0] for item in result[value]]
@@ -2988,6 +2998,8 @@ class XlCrm(http.Controller, Base):
                     domain.append(('stage_id', '=', queryFilter.get("stage_id")))
                 if queryFilter and queryFilter.get("category_id"):
                     domain.append(('category_id', '=', queryFilter.get("category_id")))
+                if queryFilter and queryFilter.get("cus_product_type_id"):
+                    domain.append(('cus_product_type_id', '=', queryFilter.get("cus_product_type_id")))
                 if queryFilter and queryFilter.get("status_id"):
                     domain.append(('status_id', '=', queryFilter.get("status_id")))
                 if queryFilter and queryFilter.get("part_no"):
@@ -4747,7 +4759,8 @@ class XlCrm(http.Controller, Base):
                 data["init_user"] = env.uid
                 id = env['xlcrm.project.remark'].sudo().create(data).id
             else:
-                env['xlcrm.project.remark'].sudo().browse(id).write({'content': content,'update_time':data['update_time']})
+                env['xlcrm.project.remark'].sudo().browse(id).write(
+                    {'content': content, 'update_time': data['update_time']})
             result = env['xlcrm.project.remark'].sudo().search_read([('id', '=', id)])
             if result:
                 result = result[0]
@@ -5528,7 +5541,7 @@ class XlCrm(http.Controller, Base):
 
         try:
             from . import connect_mssql
-            mssql = connect_mssql.Mssql('wechart')
+            mssql = connect_mssql.connect_mssql.Mssql('wechart')
             result = env['xlcrm.users'].sudo().search_read(domain, fields)
             res_wx = mssql.query('select email,openid,init_time,update_time from Wx_email where 1=1 %s' % condition)
             result_obj = []
@@ -5738,7 +5751,7 @@ class XlCrm(http.Controller, Base):
                 psd = self._crypt_context().encrypt(psd)
                 data['password'] = psd
             data["create_user_id"] = env.uid
-            if data.has_key('parent_ids'):
+            if data.get('parent_ids'):
                 parent_ids = data['parent_ids']
                 data['parent_ids'] = [[6, 0, parent_ids]]
             create_id = env[model].sudo().create(data).id
@@ -5774,7 +5787,7 @@ class XlCrm(http.Controller, Base):
         try:
             obj_id = data["id"]
             data["write_user_id"] = env.uid
-            if data.has_key('parent_ids'):
+            if data.get('parent_ids'):
                 parent_ids = data['parent_ids']
                 data['parent_ids'] = [[6, 0, parent_ids]]
             result = env["xlcrm.users"].sudo().browse(obj_id).write(data)
@@ -6045,13 +6058,15 @@ class XlCrm(http.Controller, Base):
                 return json_response(rp)
 
             uid = user_obj['id']
-            token = base64.urlsafe_b64encode((','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
+            token = base64.urlsafe_b64encode(
+                (','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
                 b'=', b'').decode()
             token = {
                 'token': token,
                 'group_id': user_obj['group_id'].id,
                 'token_expires': int(time.time()),
-                'refresh': base64.urlsafe_b64encode((token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)).encode()).decode(),
+                'refresh': base64.urlsafe_b64encode(
+                    (token + ',' + str(int(time.time()) + 24 * 60 * 60 * 1)).encode()).decode(),
                 'refresh_expires': int(time.time()) + 24 * 60 * 60 * 7
             }
             user = {
@@ -6107,7 +6122,7 @@ class XlCrm(http.Controller, Base):
                 return json_response(rp)
             if openid:
                 from . import connect_mssql
-                mssql = connect_mssql.Mssql('wechart')
+                mssql = connect_mssql.connect_mssql.Mssql('wechart')
                 qu_res = mssql.query("select email from Wx_email where openid='%s'" % openid)
                 user = request.env['xlcrm.users'].sudo().browse(user_obj[0]['id']).write({'wechat_id': openid})
                 # user_ex = request.env['xlcrm.users'].sudo().search_read([('id', '=', openid)])
@@ -6548,7 +6563,7 @@ class XlCrm(http.Controller, Base):
                 if query_filter and query_filter.get("cCusName"):
                     sql_add += " and cCusName = '%s'" % query_filter.get("cCusName")
                 from . import connect_mssql
-                mysql = connect_mssql.Mssql('ErpCrmDB')
+                mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
                 result_ = mysql.query(
                     'select cCusType,iCusCreLineThousands,cName,PayType,cexch_name,HasDue from v_Customer_CCF where 1 = 1 %s' % sql_add)
                 result = []
@@ -7332,12 +7347,12 @@ class XlCrm(http.Controller, Base):
             for cal in result_calendar:
                 if cal['visit_date']:
                     result.append({
-                        'years': [(cal['visit_date'].split('-')[0])],
-                        'months': [(cal['visit_date'].split('-')[1])],
-                        'days': [(cal['visit_date'].split('-')[2])],
+                        'years': [(f"{cal['visit_date']}".split('-')[0])],
+                        'months': [(f"{cal['visit_date']}".split('-')[1])],
+                        'days': [(f"{cal['visit_date']}".split('-')[2])],
                         'things': cal['title'],
                         'id': cal['id'],
-                        'content': cal['content'].decode("utf-8")[0:10] + ' ...'
+                        'content': cal['content'][0:10] + ' ...'
                     })
             success = True
             message = 'success'
@@ -7854,53 +7869,6 @@ class XlCrm(http.Controller, Base):
             env.cr.close()
 
         rp = {'status': 200, 'message': message, 'success': success, 'data': result}
-        return json_response(rp)
-
-    @http.route([
-        '/api/v11/upload/addfileaccount'
-    ], auth='none', type='http', csrf=False, methods=['POST', 'OPTIONS'])
-    def upload_addfile_account(self, success=False, message='', ret_data='', file='', **kw):
-        if file:
-            token = kw.pop('token')
-            env = authenticate(token)
-            if not env:
-                return no_token()
-            try:
-                res_id = kw.get('res_id')
-                from . import account_public
-                success, url, name, size, message = account_public.saveFile(env.uid, file)
-                if not success:
-                    rp = {'status': 200, 'data': [], 'success': success, 'message': message}
-                    return json_response(rp)
-                file_data = {'name': name,
-                             'datas_fname': file.filename,
-                             'res_model': 'xlcrm.account',
-                             # 'db_datas': base64.b64encode(file_content),
-                             'mimetype': file.mimetype,
-                             'create_user_id': env.uid,
-                             'file_size': size,
-                             'res_id': res_id,
-                             'type': 'url',
-                             'url': url}
-                create_id = env['xlcrm.documents'].sudo().create(file_data).id
-                env.cr.commit()
-                result_object = env['xlcrm.documents'].sudo().search_read([('id', '=', create_id)])[0]
-                ret_data = {'document_id': result_object['id'],
-                            'document_name': result_object['datas_fname'],
-                            'document_file_url': odoo.tools.config['serve_url'] + '/crm/file/' + str(
-                                result_object['id']),
-                            'init_user': result_object['create_user_id'][0],
-                            'init_usernickname': env['xlcrm.users'].sudo().search_read(
-                                [('id', '=', result_object['create_user_id'][0])])[0]['nickname'],
-                            'init_time': result_object['create_date_time']
-                            }
-
-                success = True
-            except Exception as e:
-                ret_data, success, message = '', False, str(e)
-            finally:
-                env.cr.close()
-        rp = {'status': 200, 'data': ret_data, 'success': success, 'message': message}
         return json_response(rp)
 
     @http.route([
@@ -8494,7 +8462,8 @@ class XlCrm(http.Controller, Base):
                                    'init_usernickname':
                                        env['xlcrm.users'].sudo().search_read([('id', '=', doc['create_user_id'][0])])[
                                            0]['nickname'],
-                                   'init_time': doc['create_date_time']
+                                   'init_time': doc['create_date_time'],
+                                   'description': f"料号：{doc['description']}的合规许可证附件" if doc['description'] else '',
                                    })
                 success = True
             except Exception as e:
@@ -8615,7 +8584,7 @@ class XlCrm(http.Controller, Base):
                     for index, item in enumerate(kehu_):
                         sum_sql = "select iSumOris,iSumUSD from v_GetSalesDetail_Group where companycodename='%s' and cCusName='%s'" % (
                             item["kc_company"], kc_company)
-                        mssql_res = connect_mssql.Mssql('ErpCrmDB').query(sum_sql)
+                        mssql_res = connect_mssql.connect_mssql.Mssql('ErpCrmDB').query(sum_sql)
                         isumori, sd = mssql_res[0] if mssql_res else ('', 0)
                         isumusd += sd
                         if item["release_time"] == '款到发货':
@@ -8939,7 +8908,7 @@ class XlCrm(http.Controller, Base):
             from . import connect_mssql
             print('===========start=======')
             sql = "select cCusCode,cCusName,cCusType,cCusAbbName from v_Customer_CCF"
-            mysql = connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             print('===========end=======')
             for res in res_sql:
@@ -8971,7 +8940,7 @@ class XlCrm(http.Controller, Base):
         try:
             from . import connect_mssql
             sql = "select cCode,cName from v_Aa_agreement"
-            mysql = connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             for res in res_sql:
                 tmp = {}
@@ -9002,7 +8971,7 @@ class XlCrm(http.Controller, Base):
             from . import connect_mssql
             sql = "select 七级部门名称,六级部门名称,五级部门名称,四级部门名称,三级部门名称,二级部门名称," \
                   "一级部门名称 from v_hr_hi_person where 人员姓名='%s'" % username
-            mysql = connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             deptname = ''
             if res_sql:
@@ -9034,15 +9003,15 @@ class XlCrm(http.Controller, Base):
             ccusname = kw.get('ccusname')
             from . import connect_mssql
             sql = "select distinct companycodename,收款金额,价税合计,cexch_name from v_Custoemr_GetSales where ccusname='%s'" % ccusname
-            mysql = connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             for res in res_sql:
                 tmp = {}
                 tmp['a_company'] = self.translation(res[0])
                 tmp['payment_account'] = res[1] if res[1] else '0'
                 tmp['salesment_account'] = res[2] if res[2] else '0'
-                tmp['payment_currency'] = res[3] if res[3] else '万人民币'
-                tmp['salesment_currency'] = res[3] if res[3] else '万人民币'
+                tmp['payment_currency'] = res[3] if res[3] else ''
+                tmp['salesment_currency'] = res[3] if res[3] else ''
                 result.append(tmp)
             message = "success"
         except Exception as e:

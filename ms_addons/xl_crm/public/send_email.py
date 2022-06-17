@@ -7,6 +7,7 @@ from email.header import Header
 import datetime, pytz
 
 
+
 class Send_email:
     def __init__(self, from_addr="crm@szsunray.com", qqCode="Sunray201911"):
         self.from_addr = from_addr  # 邮件发送账号
@@ -57,7 +58,8 @@ class Send_email:
             data["code"] = 500
             data["message"] = str(e)
         finally:
-            env['xlcrm.maillogs'].sudo().create(data)
+            if env:
+                env['xlcrm.maillogs'].sudo().create(data)
             return result
 
 

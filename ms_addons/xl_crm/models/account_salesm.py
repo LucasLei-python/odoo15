@@ -14,6 +14,7 @@ class XlaccountSalesM(models.Model):
     station_no = fields.Integer('签核站别')
     explain = fields.Char('实地考察情况')
     agree = fields.Char('申请账期是否同意')
+    suggestion = fields.Char('建议')
     opinion = fields.Char('申请账期意见')
     _sql_constraints = [
         ('review_id_uniq', 'unique (review_id)', "已经提交"),

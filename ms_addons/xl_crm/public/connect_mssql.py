@@ -49,6 +49,30 @@ class Mssql(object):
                 'database': 'ErpCrmDB',
                 'port': 1433,
                 'charset': 'utf8'
+            },
+            "158_601": {
+                'host': '192.168.0.158',
+                'user': 'leihui',
+                'password': 'leihui',
+                'database': 'UFDATA_601_2017',
+                'port': 1433,
+                'charset': 'utf8'
+            },
+            "158_999": {
+                'host': '192.168.0.158',
+                'user': 'leihui',
+                'password': 'leihui',
+                'database': 'UFDATA_999_2017',
+                'port': 1433,
+                'charset': 'utf8'
+            },
+            "154_999": {
+                'host': '192.168.0.154',
+                'user': 'leihui',
+                'password': 'leihui',
+                'database': 'UFDATA_999_2017',
+                'port': 1433,
+                'charset': 'utf8'
             }
         }
         self.__db = pymssql.connect(**dict_db[dbselect])
@@ -103,7 +127,7 @@ class Mssql(object):
             return True
         except Exception as e:
             self.__db.rollback()
-            raise repr(e)
+            # raise repr(e)
 
     def close(self):
         if hasattr(self, "__cur"):

@@ -62,3 +62,5 @@ from . import project_model_type, project_cus_product_type
 from . import material_profit
 from . import account_special_signers
 from . import account_salesvp
+from . import account_affiliates
+from . import u8_customer

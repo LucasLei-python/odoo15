@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
+from ..public import send_email_ToU8_EF
 
 
 class Xlaccount(models.Model):
@@ -18,6 +19,7 @@ class Xlaccount(models.Model):
     ccuscode = fields.Char('客户代码')
     ke_company = fields.Text('客户下单公司名称(英文)')
     kw_address = fields.Text('客户办公地址')
+    registered_address = fields.Text('客户注册地址')
     kf_address = fields.Text('客户工厂地址')
     krc_company = fields.Text('客户收货地址(中文)')
     kre_company = fields.Text('客户收货地址(英文)')
@@ -70,6 +72,8 @@ class Xlaccount(models.Model):
     main_id = fields.Integer(string='主单ID')
     cs = fields.Char(string='cs')
     affiliates = fields.Char(string='关联公司名称')
+    # affiliates = fields.Many2many('xlcrm.account.affiliates', 'affiliates_account_rel', 'account_id',
+    #                                            'affiliates_id', string='关联客户')
     overdue_arrears = fields.Char(string='本公司是否超期')
     re_overdue_arrears = fields.Char(string='关联公司是否超期')
     overdue_payment = fields.Char(string='本公司是否逾期')
@@ -91,6 +95,10 @@ class Xlaccount(models.Model):
     wire_apply_days = fields.Integer(string='天数')
     days_apply_type = fields.Char(string='')
     days_apply_days = fields.Integer(string='天数')
+
     # _sql_constraints = [
     #     ('review_title_uniq', 'unique (review_title)', "评审已经存在!"),
     # ]
+    @api.model
+    def task(self):
+        send_email_ToU8_EF()

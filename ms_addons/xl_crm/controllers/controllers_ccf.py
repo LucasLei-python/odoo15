@@ -27,6 +27,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
             data["update_time"] = datetime.datetime.now() + datetime.timedelta(hours=8)
             record_status = data.get('record_status')
             data['account_attend_user_ids'] = [[6, 0, []]]
+            # data['affiliates'] = [[6, 0, data['affiliates']]]
             self._get_sign_brand_name(data['products'])
             products = data['products']
             data['reviewers']['PM'] = list(map(lambda x: x.get('PM'), products))
@@ -52,6 +53,42 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 types = 'set'
                 data['account_attend_user_ids'][0][2], review_id = self.set(data, products, pm_inspector_brand_names,
                                                                             env)
+            env['xlcrm.account.affiliates'].sudo().search([('account', '=', review_id)]).unlink()
+            for item in data['affiliates']:
+                item['account'] = review_id
+                self.create('xlcrm.account.affiliates', item, env)
+            cusdata = data.get('cusdata')
+            if cusdata:
+                cusdata_999 = dict()
+                company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])],
+                                                                         limit=1)
+                cusdata['review_id'] = review_id
+                cusdata['name'] = data['kc_company']
+                cusdata['abbrname'] = data['ccusabbname']
+                cusdata['ccusexch_name'] = data['currency']
+                cusdata['a_company'] = company_code.a_companycode if company_code else ''
+                cusdata_999['review_id'] = review_id
+                cusdata_999['name'] = data['kc_company']
+                cusdata_999['abbrname'] = data['ccusabbname']
+                cusdata_999['ccusexch_name'] = data['currency']
+                cusdata_999['a_company'] = '999'
+                cusdata_999['sort_code'] = cusdata['sort_code']
+                cusdata_999['payment'] = cusdata['payment']
+                cusdata_999['ccusmngtypecode'] = cusdata['ccusmngtypecode']
+                cusdata_999['account_remark'] = cusdata['account_remark']
+                cusdata_999['ccdefine2'] = cusdata['ccdefine2']
+                cusdata_999['ccusexch_name'] = cusdata['ccusexch_name']
+                cusdata_999['seed_date'] = cusdata['seed_date']
+                for company in ('999', cusdata['a_company']):
+                    tar_data = cusdata_999 if company == '999' else cusdata
+                    cus = env['xlcrm.u8_customer'].sudo().search(
+                        [('review_id', '=', review_id), ('a_company', '=', company)])
+                    if cus:
+                        if cus.status == 0:
+                            self.update('xlcrm.u8_customer', cus.id, tar_data, env)
+                    else:
+                        self.create('xlcrm.u8_customer', tar_data, env)
+                    # env.cr.commit()
             env[model].sudo().browse(review_id).write({"account_attend_user_ids": data['account_attend_user_ids']})
             result_object = env[model].sudo().search_read([('id', '=', review_id)])
             # 更新documents
@@ -125,21 +162,23 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not self.check_sign(token, kw):
             return self.no_sign()
         try:
-            data = self.literal_eval(list(kw.keys())[0].replace('null', '""')).get("data")
+            data = self.literal_eval(
+                list(kw.keys())[0].replace('null', '""')).get("data")
             data.pop('backreason')
             if '0' in data.keys():
                 review_id = data['0'].get('review_id')
                 for da in data.values():
                     self.next_form(model, da, env)
             else:
-                review_id = data.get('id') if data.get('station_no') == 1 else data.get('review_id')
+                review_id = data.get('id') if data.get('si_station') == 1 else data.get('review_id')
                 self.next_form(model, data, env)
             result = env['xlcrm.account'].sudo().search_read([('id', '=', review_id)])
             if result:
                 result = result[0]
                 result['type'] = 'set'
-                if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'PRODUCT':
-                    self.insert_brandnamed_toU8(result)
+                if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'TEST':
+                    # self.insert_brandnamed_toU8(result)
+                    self.insert_brandlimit_toU8(review_id, env)
                 si_ = str(env.uid)
                 if result['signer'] and si_ in result['signer'].split(','):
                     result['status_id'] = 0
@@ -181,6 +220,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     signer = str(env.uid)
                     if r['status_id'] == 2 and r['signer'] and signer in r['signer'].split(','):
                         r['status_id'] = 0
+                    if r['station_no'] in range(20, 35):
+                        pass
             if ids and result and len(ids) == 1:
                 result = result[0]
             message = "success"
@@ -243,6 +284,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     company_res = env['xlcrm.user.ccfnotice'].sudo().search_read(
                         [('a_company', '=', obj_temp['a_company'])])
                     ret['companycode'] = company_res[0]['a_companycode'] if company_res else ''
+                    cusdata = env['xlcrm.u8_customer'].sudo().search_read([('review_id', '=', review_id),('a_company','!=','999')],
+                                                                          fields=['sort_code', 'payment',
+                                                                                  'ccusmngtypecode', 'account_remark',
+                                                                                  'ccdefine2', 'seed_date'])
+                    ret['cusdata'] = cusdata[0] if cusdata else {}
                     ret_temp = self.get_detail_by_id(obj_temp, env, **ret)
                 message = "success"
             except Exception as e:
@@ -353,14 +399,15 @@ class XlCrmCCF(http.Controller, Base, CCF):
             for signer in signers:
                 station_no = signer['station_no']
                 station_code = self.get_station_code(station_no)
-                sign = list(filter(lambda x: x['signer'], signer['signer'])) if isinstance(signer['signer'], Iterator) else \
+                sign = list(filter(lambda x: x['signer'], signer['signer'])) if isinstance(signer['signer'],
+                                                                                           Iterator) else \
                     signer['signer']
                 sign_ids = sign
                 if station_no in (20, 25, 30):
                     for brand in sign:
-                        brandname = brand['brandname']
+                        brandname = brand['sign_brand_name']
                         for product in products:
-                            if product['brandname'] == brandname:
+                            if product['sign_brand_name'] == brandname:
                                 product[station_code] = brand['signer']
                                 if station_no == 20:
                                     res_ = env['xlcrm.user.ccfpminspector'].sudo().search_read(
@@ -375,8 +422,9 @@ class XlCrmCCF(http.Controller, Base, CCF):
                         list(map(lambda x: str(x), self.get_user_id({station_code: sign}, env)[station_code])))
                     if station_no == 20:
                         sign_ = list(map(lambda x: x.get('PMins'), products))
-                        brandname_ = ','.join(list(map(lambda x: x['brandname'], products)))
-                        sign_ids_ = ','.join(list(map(lambda x: str(x), self.get_user_id({'PMins': sign_}, env)['PMins'])))
+                        brandname_ = ','.join(list(map(lambda x: x['sign_brand_name'], products)))
+                        sign_ids_ = ','.join(
+                            list(map(lambda x: str(x), self.get_user_id({'PMins': sign_}, env)['PMins'])))
                         res_s_ = env['xlcrm.account.signers'].sudo().search(
                             [('review_id', '=', review_id), ('station_no', '=', 21)])
                         if res_s_:
@@ -511,7 +559,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 if key == 35:
                     res_tmp = [res_tmp[0]] if res_tmp else []
                 if key == 20:
-                    self._get_pm_profit(res_tmp)
+                    self._get_pm_profit(res_tmp, env)
                 result[value] = res_tmp
                 if result[value]:
                     signer = [env['xlcrm.users'].sudo().search_read([('id', '=', item['update_user'][0])],
@@ -588,8 +636,52 @@ class XlCrmCCF(http.Controller, Base, CCF):
             return self.no_token()
         try:
             from . import connect_mssql
-            mssql = connect_mssql.Mssql('stock')
+            mssql = connect_mssql.connect_mssql.Mssql('stock')
             res = mssql.query('select distinct [品牌] from [v_Inventory_sunray]')
+            for _res in res:
+                data.append(_res[0])
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getPaymentFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_payment(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            from . import connect_mssql
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            res = mssql.query('select cValue from UserDefine where cID=70')
+            for _res in res:
+                data.append(_res[0])
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getAccountRemarkListFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_account_remark(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            from . import connect_mssql
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            res = mssql.query('select cValue from UserDefine where cID=65')
             for _res in res:
                 data.append(_res[0])
         except Exception as e:
@@ -608,7 +700,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
         try:
             brand_name = kw.get('brand_name')
             from . import connect_mssql
-            mssql = connect_mssql.Mssql('stock')
+            mssql = connect_mssql.connect_mssql.Mssql('stock')
             sql = "select [品牌],[存货编号] from [v_Inventory_sunray] where 品牌='%s'" % brand_name
             res = mssql.query(sql)
             for _res in res:
@@ -616,6 +708,28 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 _tmp['brand_name'] = _res[0]
                 _tmp['inventory_code'] = _res[1]
                 data.append(_tmp)
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getCustomerClassFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_customerclass(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            from . import connect_mssql
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            res = mssql.query('select cCCCode,cCCName from CustomerClass where iCCGrade=4')
+            for _res in res:
+                data.append({'value': _res[0], 'label': _res[1]})
         except Exception as e:
             success, message = False, str(e)
         finally:
@@ -761,4 +875,58 @@ class XlCrmCCF(http.Controller, Base, CCF):
         finally:
             env.cr.close()
         rp = {'status': 200, 'data': result_object, 'message': message, 'success': success}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/upload/addfileaccount'
+    ], auth='none', type='http', csrf=False, methods=['POST', 'OPTIONS'])
+    def upload_addfile_account(self, success=False, message='', ret_data='', file='', **kw):
+        if file:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            try:
+                res_id = kw.get('res_id')
+                materials = kw.get('materials')
+                description = materials if materials else ''
+                from . import account_public
+                success, url, name, size, message = account_public.saveFile(env.uid, file)
+                if not success:
+                    rp = {'status': 200, 'data': [], 'success': success, 'message': message}
+                    return self.json_response(rp)
+                file_data = {'name': name,
+                             'datas_fname': file.filename,
+                             'res_model': 'xlcrm.account',
+                             # 'db_datas': base64.b64encode(file_content),
+                             'mimetype': file.mimetype,
+                             'create_user_id': env.uid,
+                             'file_size': size,
+                             'res_id': res_id,
+                             'type': 'url',
+                             'description': description,
+                             'url': url}
+                create_id = env['xlcrm.documents'].sudo().create(file_data).id
+                env.cr.commit()
+                if description:
+                    self.insert_brandlimit_toU8(int(res_id), env)
+                result_object = env['xlcrm.documents'].sudo().search_read([('id', '=', create_id)])[0]
+                ret_data = {'document_id': result_object['id'],
+                            'document_name': result_object['datas_fname'],
+                            'document_file_url': odoo.tools.config['serve_url'] + '/crm/file/' + str(
+                                result_object['id']),
+                            'init_user': result_object['create_user_id'][0],
+                            'init_usernickname': env['xlcrm.users'].sudo().search_read(
+                                [('id', '=', result_object['create_user_id'][0])])[0]['nickname'],
+                            'init_time': result_object['create_date_time'],
+                            'description': f"料号：{result_object['description']}的合规许可证附件" if result_object[
+                                'description'] else ''
+                            }
+
+                success = True
+            except Exception as e:
+                ret_data, success, message = '', False, str(e)
+            finally:
+                env.cr.close()
+        rp = {'status': 200, 'data': ret_data, 'success': success, 'message': message}
         return self.json_response(rp)

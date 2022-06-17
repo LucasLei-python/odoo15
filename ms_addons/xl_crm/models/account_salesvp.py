@@ -13,6 +13,8 @@ class Xlaccountcsvp(models.Model):
     update_user = fields.Many2one('xlcrm.users', store=True, string='更新者')
     update_nickname = fields.Char(related='update_user.nickname', store=False, string='签核人昵称')
     station_no=fields.Integer('签核站别')
+    agree = fields.Char('申请账期是否同意')
+    suggestion = fields.Char('建议')
 
     _sql_constraints = [
         ('review_id_uniq', 'unique (review_id)', "已经提交"),
