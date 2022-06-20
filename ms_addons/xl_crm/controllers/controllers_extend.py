@@ -406,79 +406,68 @@ class XlCrmExtend(http.Controller, Base):
             cr = registry(db).cursor()
             env = api.Environment(cr, '', {})
             res = env['xlcrm.account'].sudo().search([('status_id', '=', 3)])
+            data_account, data_payment, data_profit = '<tb_account>', '<tb_payment>', '<tb_profit>'
             for _res in res:
-                tmp = dict()
-                tmp['id'] = _res.id
-                if _res.id == 391:
-                    a = 1
+                tmp, tmp_payment, tmp_profit = '', '', ''
+                tmp += f'<row>'
+                tmp += f'<id>{_res.id}</id>'
                 sales = env['xlcrm.account.sales'].sudo().search([('review_id', '=', _res.id)], limit=1)
-                tmp['apply_user'] = _res.apply_user
-                tmp['department'] = _res.department
-                tmp['kc_company'] = _res.kc_company
-                tmp['sales_nickname'] = sales.init_user.nickname
-                tmp['sales_dept'] = sales.init_user.department_id.name
-                tmp['currency'] = _res.currency
-                tmp['status'] = '未建档' if _res.kehu == '新客户' else '已建档'
-                tmp['account'] = _res.release_time_apply if _res.release_time_apply else _res.release_time_apply_new
-                tmp['payment'] = ''
+                tmp += f'<apply_user>{_res.apply_user}</apply_user>'
+                tmp += f'<department>{_res.department}</department>'
+                tmp += f'<kc_company>{_res.kc_company}</kc_company>'
+                tmp += f'<sales_nickname>{sales.init_user.nickname}</sales_nickname>'
+                tmp += f'<sales_dept>{sales.init_user.department_id.name}</sales_dept>'
+                tmp += f'<currency>{_res.currency}</currency>'
+                tmp += f"<status>{'未建档' if _res.kehu == '新客户' else '已建档'}</status>"
+                tmp += f"<account>{_res.release_time_apply}</account>"
+                payment = ''
                 if _res.release_time_apply:
-                    tmp['payment'] = _res.release_time_apply.replace('amp;', '&').replace('eq;', '='). \
+                    payment = _res.release_time_apply.replace('amp;', '&').replace('eq;', '='). \
                         replace('plus;', '+').replace('per;', '%')
                     if _res.acceptance_days_apply or _res.telegraphic_days_apply:
-                        tmp['payment'] += _res.acceptance_days_apply + _res.telegraphic_days_apply + '天'
+                        payment += _res.acceptance_days_apply + _res.telegraphic_days_apply + '天'
                     else:
-                        tmp['payment'] += _res.others_apply if _res.others_apply else ''
+                        payment += _res.others_apply if _res.others_apply else ''
                 elif _res.release_time_apply_new:
-                    tmp['payment'] = _res.release_time_apply_new.replace('amp;', '&').replace('eq;', '='). \
+                    payment = _res.release_time_apply_new.replace('amp;', '&').replace('eq;', '='). \
                         replace('plus;', '+').replace('per;', '%')
                     if _res.wire_apply_type:
-                        tmp['payment'] += _res.wire_apply_type + str(_res.wire_apply_days) + '天'
+                        payment += _res.wire_apply_type + str(_res.wire_apply_days) + '天'
                     elif _res.days_apply_type:
-                        tmp['payment'] += _res.days_apply_type + str(_res.days_apply_days) + '天'
+                        payment += _res.days_apply_type + str(_res.days_apply_days) + '天'
                     else:
-                        tmp['payment'] += _res.others_apply
-                tmp['payment_status'], tmp['payment_account'] = '', []
+                        payment += _res.others_apply
+                tmp += f"<payment>{payment}</payment>"
+                payment_status = ''
                 cs = eval(_res.cs) if _res.cs else ''
                 if cs:
-                    tmp['payment_status'] = cs.get('on_time')
+                    payment_status = cs.get('on_time')
                     his = cs.get('historys', [])
-                    tmp['payment_account'] = [
-                        {'account': item.get('a_company', _res.a_company),
-                         'payment': str(item.get('payment_account', '')) + item.get('payment_currency', '')}
-                        for item in his if item] if his else []
+                    for item in his:
+                        if item:
+                            tmp_payment += f"<row><a_id>{_res.id}</a_id>" \
+                                           f"<account>{item.get('a_company', _res.a_company)}<account/>" \
+                                           f"<payment>{str(item.get('payment_account', '')) + item.get('payment_currency', '')}</payment></row>"
+                tmp += f"<payment_status>{payment_status}</payment_status>"
                 pm = env['xlcrm.account.pm'].sudo().search([('review_id', '=', _res.id)])
-                tmp['brandname'] = ''
-                profit = []
+                brandname = ''
                 for _pm in pm:
-                    brandname = _pm.brandname.split('_index')[0] if _pm.brandname else ''
-                    tmp['brandname'] += brandname
+                    brandname_ = _pm.brandname.split('_index')[0] if _pm.brandname else ''
+                    brandname += brandname_
                     mater_profit = env['xlcrm.material.profit'].sudo().search([('pm_id', '=', _pm.id)])
                     for m_p in mater_profit:
-                        profit.append({'brandname': brandname, 'material': m_p.material, 'profit': m_p.profit})
-                tmp['profit'] = profit
-                data.append(tmp)
+                        tmp_profit += f"<row><a_id>{_res.id}</a_id><brandname>{brandname_}</brandname>" \
+                                      f"<material>{m_p.material}</material><profit>{m_p.profit}</profit></row>"
+                tmp += f"<brandname>{brandname}</brandname>"
+                data_account += tmp + '</row>'
+                data_payment += tmp_payment
+                data_profit += tmp_profit
+            data = f"<root>{data_account}</tb_account>{data_payment}</tb_payment>{data_profit}</tb_profit></root>"
             env.cr.close()
-            data = json_to_xml('','root',data)
+            # data = json_to_xml('root', data)
         except Exception as e:
             success, message = False, str(e)
         finally:
-            return self.json_response(
-                {'status': 200, 'data': data, 'success': success, 'message': message})
+            return self.json_response(data)
 
 
-def json_to_xml(content, key, json):
-    if type(json) is dict:
-        if key != "":
-            content += "<%s>" % key
-        for key1, value in json.items():
-            content += json_to_xml(content, key1, value)
-        if key != "":
-            content += "</%s>" % key
-    elif type(json) is list:
-        for l in json:
-            content += "<tb_%s><row>" % key
-            content += json_to_xml(content, "", l)
-            content += "</tb_%s></row>" % key
-    else:
-        content += "<%s>%s</%s>" % (key, json, key)
-    return content

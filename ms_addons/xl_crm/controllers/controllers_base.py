@@ -67,6 +67,12 @@ class Base:
                                           mimetype='application/json',
                                           headers=headers)
 
+    def xml_response(self,rp):
+        headers = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"}
+        return werkzeug.wrappers.Response(rp,
+                                          mimetype='application/json',
+                                          headers=headers)
+
     def check_sign(self, token, kw):
         data = list(kw.keys())[0].replace('null', '""').replace('true', '""')
         sign = ast.literal_eval(data).get("sign")
