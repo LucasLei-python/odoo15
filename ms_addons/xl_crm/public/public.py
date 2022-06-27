@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .controllers_base import Base
+from ..controllers import controllers_base
 
 
 class Public:
@@ -14,7 +14,7 @@ class Public:
         return overdue.get_payment()
 
 
-class Overdue(Base):
+class Overdue(controllers_base.Base):
     def __init__(self, cus, mssql):
         self.cus = cus
         self.mssql = mssql

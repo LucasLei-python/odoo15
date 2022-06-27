@@ -807,7 +807,7 @@ class XlCrm(http.Controller, Base):
             email_uid = env['xlcrm.users'].sudo().search_read([('id', 'in', data['email_notification'])],
                                                               fields=['email'])
             email_user = map(lambda x: x['email'], email_uid) if email_uid else []
-            from . import send_email
+            from ..public import send_email
             send_result = True
             for index, em in enumerate(email_user):
                 token = get_token(data['email_notification'][index])
@@ -1438,7 +1438,7 @@ class XlCrm(http.Controller, Base):
                                 obj_temp[f] = {'id': obj_temp[f][0], 'display_name': obj_temp[f][1]}
                             else:
                                 obj_temp[f] = ''
-                    from . import account_public
+                    from ..public import account_public
                     # 判断signer
                     signer = str(obj_temp["signer"]['id']) if obj_temp["signer"] else obj_temp["signer"]
                     station_no = obj_temp["station_no"]
@@ -1790,150 +1790,6 @@ class XlCrm(http.Controller, Base):
     #     return json_response(rp)
 
     @http.route([
-        '/api/v11/getAccountDetailByCustomer/<string:model>'
-    ], auth='none', type='http', csrf=False, methods=['GET'])
-    def get_account_detail_by_customer(self, model=None, ids=None, **kw):
-        success, message, result, ret_temp, count, offset, limit = True, '', '', {}, 0, 0, 25
-        token = kw.pop('token')
-        env = authenticate(token)
-        if not env:
-            return no_token()
-        domain, domain_c = [], []
-        if kw.get("customer"):
-            customer = self.literal_eval(kw.get("customer"))
-            domain_base = [('status_id', '>', 1)]
-            domain = [('kc_company', '=', customer.get("kc_company")), ('a_company', '=', customer.get("a_company")),
-                      ]
-            domain_c = [('kc_company', '=', customer.get("kc_company"))]
-            try:
-                result = request.env[model].sudo().search_read(domain + domain_base, order='init_time desc', limit=1)
-                if not result:
-                    result = request.env[model].sudo().search_read(domain_c + domain_base, order='init_time desc',
-                                                                   limit=1)
-                if result:
-                    obj_temp = result[0]
-                    model_fields = request.env[model].fields_get()
-                    for f in obj_temp.keys():
-                        if model_fields[f]['type'] == 'many2one':
-                            if obj_temp[f]:
-                                obj_temp[f] = {'id': obj_temp[f][0], 'display_name': obj_temp[f][1]}
-                            else:
-                                obj_temp[f] = ''
-                    from . import account_public
-                    current_account_period = []
-                    if obj_temp['current_account_period']:
-                        current_account_period = ast.literal_eval(obj_temp['current_account_period'])
-                    if not current_account_period:
-                        temp = {}
-                        temp['kc_company'] = obj_temp['kc_company']
-                        temp['release_time'] = obj_temp['release_time'] if obj_temp['release_time'] else ''
-                        temp['payment_method'] = obj_temp['payment_method'] if obj_temp['payment_method'] else ''
-                        telegraphic_days = obj_temp['telegraphic_days'] if obj_temp['telegraphic_days'] else ''
-                        acceptance_days = obj_temp['acceptance_days'] if obj_temp[
-                            'acceptance_days'] else ''
-                        days = '' if temp['payment_method'] == '100%电汇' or not temp['payment_method'] else '天'
-                        temp['payment_method'] += telegraphic_days + acceptance_days + days
-                        temp['credit_limit_now'] = obj_temp['credit_limit_now'] if obj_temp[
-                            'credit_limit_now'] else ''
-                        current_account_period.append(temp)
-                    if obj_temp['cs']:
-                        obj_temp['cs'] = eval(obj_temp['cs'])
-                        obj_temp['cs']['remark'] = obj_temp['cs']['remark'] if obj_temp['cs'].get('remark') else ''
-                    else:
-                        res_customer = env['xlcrm.account.customer'].sudo().search_read(
-                            [('review_id', '=', obj_temp['id'])])
-                        res_ = {
-                            'payment': '',
-                            'on_time': ''
-                        }
-                        if res_customer:
-                            customer_ = res_customer[0]
-                            res_['registered_capital'] = customer_['registered_capital']
-                            res_['registered_capital_currency'] = customer_['registered_capital_currency']
-                            res_['paid_capital'] = customer_['paid_capital']
-                            res_['paid_capital_currency'] = customer_['paid_capital_currency']
-                            res_['insured_persons'] = customer_['insured_persons']
-                            res_['on_time'] = customer_['on_time']
-                            res_['overdue30'] = customer_['overdue30']
-                            res_['overdue60'] = customer_['overdue60']
-                            res_['overdue_others'] = customer_['overdue_others']
-                            res_['payment'] = customer_['payment']
-                            res_['payment_currency'] = customer_['payment_currency']
-                            res_['payment_account'] = customer_['payment_account']
-                            res_['salesment_currency'] = customer_['salesment_currency']
-                            res_['salesment_account'] = customer_['salesment_account']
-                            res_['stock'] = customer_['stock']
-                            res_['guarantee'] = customer_['guarantee']
-                            res_['remark'] = ''
-                        obj_temp['cs'] = res_
-                    if not obj_temp['cs'].get('historys'):
-                        obj_temp['cs']['historys'] = [{'payment_account': obj_temp['cs']['payment_account'],
-                                                       'payment_currency': obj_temp['cs']['payment_currency'],
-                                                       'salesment_account': obj_temp['cs']['salesment_account'],
-                                                       'salesment_currency': obj_temp['cs']['salesment_currency'],
-                                                       }]
-                    ret_temp = {
-                        "id": obj_temp["id"],
-                        "review_type": obj_temp["review_type"],
-                        "apply_user": obj_temp["apply_user"],
-                        "department": obj_temp["department"],
-                        "apply_date": obj_temp["apply_date"],
-                        "a_company": obj_temp["a_company"],
-                        "kc_company": obj_temp["kc_company"],
-                        "ke_company": obj_temp["ke_company"],
-                        "kw_address": obj_temp["kw_address"],
-                        "registered_address": obj_temp["registered_address"],
-                        "kf_address": obj_temp["kf_address"],
-                        "krc_company": obj_temp["krc_company"],
-                        'kre_company': obj_temp["kre_company"],
-                        'kpc_company': obj_temp["kpc_company"],
-                        'kpe_company': obj_temp["kpe_company"],
-                        "de_address": obj_temp["de_address"],
-                        "currency": obj_temp["currency"],
-                        "station_no": obj_temp["station_no"],
-                        "reconciliation_date": obj_temp["reconciliation_date"],
-                        "payment_date": obj_temp["payment_date"],
-                        "account_attend_user_ids": obj_temp["account_attend_user_ids"],
-                        'reviewers': ast.literal_eval(obj_temp['reviewers']) if obj_temp['reviewers'] else {},
-                        'products': ast.literal_eval(obj_temp['products']) if obj_temp['products'] else [],
-                        'remark': obj_temp['remark'] if obj_temp['remark'] else '',
-                        'kehu': obj_temp['kehu'] if obj_temp['kehu'] else '',
-                        'unit': obj_temp['unit'] if obj_temp['unit'] else '',
-                        'release_time': obj_temp['release_time'] if obj_temp['release_time'] else '',
-                        'payment_method': obj_temp['payment_method'] if obj_temp['payment_method'] else '',
-                        'telegraphic_days': obj_temp['telegraphic_days'] if obj_temp['telegraphic_days'] else '',
-                        'release_time_apply': obj_temp['release_time_apply'] if obj_temp['release_time_apply'] else '',
-                        'release_time_applyM': obj_temp['release_time_applyM'] if obj_temp[
-                            'release_time_applyM'] else '',
-                        'release_time_applyO': obj_temp['release_time_applyO'] if obj_temp[
-                            'release_time_applyO'] else '',
-                        'payment_method_apply': obj_temp['payment_method_apply'] if obj_temp[
-                            'payment_method_apply'] else '',
-                        'acceptance_days_apply': obj_temp['acceptance_days_apply'] if obj_temp[
-                            'acceptance_days_apply'] else '',
-                        'acceptance_days': obj_temp['acceptance_days'] if obj_temp[
-                            'acceptance_days'] else '',
-                        'telegraphic_days_apply': obj_temp['telegraphic_days_apply'] if obj_temp[
-                            'telegraphic_days_apply'] else '',
-                        'credit_limit': obj_temp['credit_limit'] if obj_temp[
-                            'credit_limit'] else '',
-                        'credit_limit_now': obj_temp['credit_limit_now'] if obj_temp[
-                            'credit_limit_now'] else '',
-                        'current_account_period': current_account_period,
-                        'cs': obj_temp['cs'],
-                        'affiliates': eval(obj_temp['affiliates']) if obj_temp['affiliates'] else [],
-                        'protocol_code': obj_temp['protocol_code']
-                    }
-                message = "success"
-            except Exception as e:
-                result, success, message = '', False, str(e)
-            finally:
-                env.cr.close()
-
-        rp = {'status': 200, 'message': message, 'data': ret_temp}
-        return json_response(rp)
-
-    @http.route([
         '/api/v11/getProjectReviewById/<string:model>'
     ], auth='none', type='http', csrf=False, methods=['GET'])
     def get_project_review_by_id(self, model=None, ids=None, **kw):
@@ -2011,7 +1867,7 @@ class XlCrm(http.Controller, Base):
                 station_no = from_station_[0]['from_station'] if from_station_ and from_station_[0][
                     'sign_over'] == 'N' else station_no
                 signer_id = main_form[0]['signer'][0] if main_form[0]['signer'] else ''
-                from . import account_public
+                from ..public import account_public
                 account = account_public.Stations('帐期额度申请单')
                 dict_model = account.getModelByStaion(station_no)
                 base_model = 'xlcrm.account'
@@ -2059,103 +1915,6 @@ class XlCrm(http.Controller, Base):
 
         rp = {'status': 200, 'message': message, 'success': success, 'data': result}
         return json_response(rp)
-
-    # @http.route([
-    #     '/api/v12/getAccountReviewById/<string:model>'
-    # ], auth='none', type='http', csrf=False, methods=['GET'])
-    # def get_account_review_by_id12(self, model=None, ids=None, **kw):
-    #     success, message, result, count, offset, limit = True, '', '', 0, 0, 25
-    #     token = kw.pop('token')
-    #     env = authenticate(token)
-    #     if not env:
-    #         return no_token()
-    #     domain = []
-    #     filters = []
-    #     result = {}
-    #     id = int(kw.get("id"))
-    #     if id:
-    #         domain.append(('id', '=', id))
-    #         domain = searchargs(domain)
-    #         try:
-    #             main_form = request.env["xlcrm.account"].sudo().search_read(domain)
-    #             station_no = main_form[0]['station_no']
-    #             from_station_ = env['xlcrm.account.partial'].sudo().search_read(
-    #                 [('review_id', '=', int(kw.get("id")))], order='init_time desc', limit=1)
-    #             station_no = from_station_[0]['from_station'] if from_station_ and from_station_[0][
-    #                 'sign_over'] == 'N' else station_no
-    #             signer_id = main_form[0]['signer'][0] if main_form[0]['signer'] else ''
-    #             from . import account_public
-    #             account = account_public.Stations('帐期额度申请单')
-    #             dict_model = account.getModelByStaion(station_no)
-    #             base_model = 'xlcrm.account'
-    #             for key, value in dict_model.items():
-    #                 tar_model = base_model + '.' + value
-    #                 tar_domain = [('review_id', '=', id), ('station_no', '=', key)]
-    #                 res_tmp = env[tar_model].sudo().search_read(tar_domain, filters, order='update_time desc')
-    #                 if key == 36:
-    #                     value = 'fdm'
-    #                     if not res_tmp:
-    #                         tar_domain = [('review_id', '=', id), ('station_no', '=', 35)]
-    #                         res_tmp = env[tar_model].sudo().search_read(tar_domain, filters, order='update_time desc')
-    #                         res_tmp = [res_tmp[0]] if res_tmp else []
-    #                 if key == 35:
-    #                     res_tmp = [res_tmp[0]] if res_tmp else []
-    #                 result[value] = res_tmp
-    #                 if result[value]:
-    #                     signer = [env['xlcrm.users'].sudo().search_read([('id', '=', item['update_user'][0])],
-    #                                                                     ['nickname'])[0]['nickname'] + ' ' + item[
-    #                                   'update_time'] for item in result[value]]
-    #                     # signer='-'.join(signer)
-    #                     # 判断是否回签，回签后是否已签
-    #                     signer_id = [item['update_user'][0] for item in result[value]]
-    #                     re_back_ = env['xlcrm.account.partial'].sudo().search_read(
-    #                         [('review_id', '=', id)], order='init_time desc', limit=1)
-    #                     re_back = re_back_ if re_back_ and re_back_[0]['sign_over'] == 'N' else ''
-    #                     if re_back:
-    #                         sign_station = re_back[0]['sign_station'] if re_back[0]['sign_station'] else ''
-    #                         if str(account.getStaionsReject(value)) + ',' in sign_station:
-    #                             signer_id = []
-    #                     if value in ('pm', 'pmins', 'pur', 'pmm'):
-    #                         for rs in result[value]:
-    #                             rs['signer'] = [
-    #                                 env['xlcrm.users'].sudo().search_read([('id', '=', rs['update_user'][0])],
-    #                                                                       ['nickname'])[0]['nickname'] + ' ' + rs[
-    #                                     'update_time']]
-    #                             rs['signer_id'] = [rs['update_user'][0]]
-    #                             rs['init_nickname'] = \
-    #                                 env['xlcrm.users'].sudo().search_read([('id', '=', rs['update_user'][0])],
-    #                                                                       ['nickname'])[0]['nickname']
-    #                         continue
-    #                     result[value] = result[value][0]
-    #                     result[value]['init_nickname'] = \
-    #                         env['xlcrm.users'].sudo().search_read([('id', '=', result[value]['update_user'][0])],
-    #                                                               ['nickname'])[0][
-    #                             'nickname']
-    #                     result[value]['signer'] = signer
-    #                     result[value]['signer_id'] = signer_id
-    #                     if value == "sales":
-    #                         result['sales']['products'] = ast.literal_eval(result['sales']['products']) if \
-    #                             result['sales']['products'] else []
-    #                     if value == 'risk':
-    #                         result[value]['signer'] = signer[::-1]
-    #                         result[value]['signer_id'] = signer_id[::-1]
-    #                         result[value]['products_overdue'] = ast.literal_eval(result[value]['products_overdue']) if \
-    #                             result[value]['products_overdue'] else []
-    #                         result[value]['products_contract'] = ast.literal_eval(result[value]['products_contract']) if \
-    #                             result[value]['products_contract'] else []
-    #
-    #                 else:
-    #                     result[value] = {'id': '', 'signer_id': signer_id}
-    #             message = "success"
-    #             success = True
-    #
-    #         except Exception as e:
-    #             result, success, message = '', False, str(e)
-    #         finally:
-    #             env.cr.close()
-    #
-    #     rp = {'status': 200, 'message': message, 'success': success, 'data': result}
-    #     return json_response(rp)
 
     @http.route([
         '/api/v11/getCommitItemById/<string:model>'
@@ -2528,7 +2287,7 @@ class XlCrm(http.Controller, Base):
             # id = data.get("id")
             review_id = data.get('review_id')
             station_no = data.get("station_no")
-            from . import account_public
+            from ..public import account_public
             account = account_public.Stations('帐期额度申请单')
             record_status = data.get('record_status')
             if station_no == 1:
@@ -2558,7 +2317,7 @@ class XlCrm(http.Controller, Base):
             # send_wechart =True
             if record_status > 0:
                 date_main = {}
-                from . import send_email
+                from ..public import send_email
                 email_obj = send_email.Send_email()
                 if record_status == 1:
                     next_signer = ''
@@ -2902,7 +2661,7 @@ class XlCrm(http.Controller, Base):
                             result[f] = {'id': result[f][0], 'display_name': result[f][1]}
                         else:
                             result[f] = ''
-                from . import account_public
+                from ..public import account_public
                 account_public.sendVisitEmail(result, env, result['id'])
                 message = "success"
                 success = True
@@ -2930,7 +2689,7 @@ class XlCrm(http.Controller, Base):
             data = ast.literal_eval(list(kw.keys())[0]).get("data")
             obj_id = data["id"]
             result_object = env[model].sudo().search_read([('id', '=', obj_id)])[0]
-            from . import account_public
+            from ..public import account_public
             account_public.sendVisitEmail(result_object, env, obj_id)
             message = "success"
             success = True
@@ -3218,7 +2977,7 @@ class XlCrm(http.Controller, Base):
                 if queryFilter and queryFilter.get('a_company'):
                     domain.append(('a_company', 'ilike', queryFilter.get('a_company')))
             result = request.env['xlcrm.user.ccfnotice'].sudo().search_read(domain=domain)
-            from . import account_public as pb
+            from ..public import account_public as pb
             pa = pb.Stations('')
             for r in result:
                 r['lg'] = ast.literal_eval(r['lg']) if r['lg'] else []
@@ -3566,7 +3325,7 @@ class XlCrm(http.Controller, Base):
             else:
                 result = request.env[model].sudo().search_read(domain, fields, order=order)
 
-            from . import account_public
+            from ..public import account_public
             ap = account_public.Stations('帐期额度申请单')
             for r in result:
                 r["station_desc"] = ap.getStionsDesc(r["station_no"])
@@ -4324,7 +4083,7 @@ class XlCrm(http.Controller, Base):
             }
             env["xlcrm.operation.log"].sudo().create(operation_log)
             # 发送邮件到参会人员
-            from . import send_email
+            from ..public import send_email
             # uid = env["xlcrm.users"].sudo().search_read([("id", "=", env.uid)])[0]
             # fromaddr = uid["email"]
             # qqCode = uid["email_password"]
@@ -4400,7 +4159,7 @@ class XlCrm(http.Controller, Base):
             userIds = []
 
             attend_users = []
-            from . import account_public
+            from ..public import account_public
             if data.get("date_from"):
                 data['date_from'] = account_public.get_date(data['date_from'])
             if data.get("date_to"):
@@ -4589,8 +4348,7 @@ class XlCrm(http.Controller, Base):
             # success = True
             # message = "success"
             # 发送邮件到参会人员
-            from . import send_email
-            from . import account_public
+            from ..public import send_email,account_public
             uid = env["xlcrm.users"].sudo().search_read([("id", "=", env.uid)])[0]
             # fromaddr = uid["email"]
             # qqCode = uid["email_password"]
@@ -4785,7 +4543,7 @@ class XlCrm(http.Controller, Base):
         if not check_sign(token, kw):
             return no_sign()
         try:
-            from . import account_public
+            from ..public import account_public
             data['station_no'] = 1
             data["init_user"] = env.uid
             data["update_user"] = env.uid
@@ -4967,7 +4725,7 @@ class XlCrm(http.Controller, Base):
                 result_object = result_object[0]
                 result_object['type'] = type
                 if result_object['signer'] and record_status > 0:
-                    from . import send_email
+                    from ..public import send_email
                     email_obj = send_email.Send_email()
                     uid = result_object['signer'][0]
                     # fromaddr = "crm@szsunray.com"
@@ -5471,7 +5229,7 @@ class XlCrm(http.Controller, Base):
                 username = item['username']
                 email = item['email']
                 nickname = item['nickname']
-                from . import send_email, connect_mssql
+                from ..public import send_email, connect_mssql
                 email_obj = send_email.Send_email()
                 sbuject = "微信绑定验证码"
                 to = [odoo.tools.config["test_username"]]
@@ -5540,8 +5298,8 @@ class XlCrm(http.Controller, Base):
                 domain.append(('nickname', 'ilike', queryFilter.get("user")))
 
         try:
-            from . import connect_mssql
-            mssql = connect_mssql.connect_mssql.Mssql('wechart')
+            from ..public import connect_mssql
+            mssql = connect_mssql.Mssql('wechart')
             result = env['xlcrm.users'].sudo().search_read(domain, fields)
             res_wx = mssql.query('select email,openid,init_time,update_time from Wx_email where 1=1 %s' % condition)
             result_obj = []
@@ -6121,8 +5879,8 @@ class XlCrm(http.Controller, Base):
                       'message': '账号或密码不对，请联系系统管理员！'}
                 return json_response(rp)
             if openid:
-                from . import connect_mssql
-                mssql = connect_mssql.connect_mssql.Mssql('wechart')
+                from ..public import connect_mssql
+                mssql = connect_mssql.Mssql('wechart')
                 qu_res = mssql.query("select email from Wx_email where openid='%s'" % openid)
                 user = request.env['xlcrm.users'].sudo().browse(user_obj[0]['id']).write({'wechat_id': openid})
                 # user_ex = request.env['xlcrm.users'].sudo().search_read([('id', '=', openid)])
@@ -6164,7 +5922,7 @@ class XlCrm(http.Controller, Base):
             openid = ''
             message = '首次登录需验证帐号密码'
             if code:
-                from . import account_public, connect_mssql
+                from ..public import connect_mssql,account_public
                 openid = account_public.loginwechat(code)
                 if openid:
                     db = odoo.tools.config['db_name']
@@ -6562,8 +6320,8 @@ class XlCrm(http.Controller, Base):
                 query_filter = ast.literal_eval(kw.get("data"))
                 if query_filter and query_filter.get("cCusName"):
                     sql_add += " and cCusName = '%s'" % query_filter.get("cCusName")
-                from . import connect_mssql
-                mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
+                from ..public import connect_mssql
+                mysql = connect_mssql.Mssql('ErpCrmDB')
                 result_ = mysql.query(
                     'select cCusType,iCusCreLineThousands,cName,PayType,cexch_name,HasDue from v_Customer_CCF where 1 = 1 %s' % sql_add)
                 result = []
@@ -6685,7 +6443,7 @@ class XlCrm(http.Controller, Base):
         if not check_sign(token, kw):
             return no_sign()
         try:
-            from . import account_public
+            from ..public import account_public
             ap = account_public.Stations('帐期额度申请单')
             review_id = data.pop('review_id')
             from_station = data.pop('from_station')
@@ -7374,7 +7132,7 @@ class XlCrm(http.Controller, Base):
             if not env:
                 return no_token()
             try:
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
@@ -7415,7 +7173,7 @@ class XlCrm(http.Controller, Base):
                 return no_token()
             try:
                 # file_content = file.stream.read()
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
@@ -7457,7 +7215,7 @@ class XlCrm(http.Controller, Base):
                 return no_token()
             try:
                 res_id = kw.get('res_id')
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
@@ -8245,7 +8003,7 @@ class XlCrm(http.Controller, Base):
                 return no_token()
             try:
                 res_id = kw.get('res_id')
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
@@ -8290,7 +8048,7 @@ class XlCrm(http.Controller, Base):
                 return no_token()
             try:
                 res_id = kw.get('res_id')
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
@@ -8338,7 +8096,7 @@ class XlCrm(http.Controller, Base):
             token = get_token(1).pop('token').pop('token')
             env = authenticate(token)
             document_res = env['xlcrm.documents'].sudo().search_read()
-            from . import account_public
+            from ..public import account_public
             for doc in document_res:
                 if doc['db_datas']:
                     file_content = base64.b64decode(doc['db_datas'])
@@ -8370,7 +8128,7 @@ class XlCrm(http.Controller, Base):
             env = authenticate(token)
             res = env['xlcrm.account'].sudo().search_read([('id', '=', 451)])
 
-            from . import account_public
+            from ..public import account_public
             account = account_public.Stations('zhang')
             for re in res:
                 list_res = []
@@ -8545,195 +8303,7 @@ class XlCrm(http.Controller, Base):
               'success': success}
         return json_response(rp)
 
-    @http.route([
-        '/api/v11/sendSignOverEmail',
-    ], auth='none', type='http', csrf=False, methods=['POST'])
-    def sendSignOverEmail(self, model=None, success=True, message='', **kw):
-        token = kw.pop('token')
-        env = authenticate(token)
-        review_id = int(kw.pop('review_id'))
-        if not env:
-            return no_token()
-        if not check_sign(token, kw):
-            return no_sign()
-        try:
-            res = env['xlcrm.account'].sudo().search_read([('id', '=', review_id), ('init_user', '=', env.uid)])
-            if res:
-                res = res[0]
-                a_company = res['a_company']
-                kc_company = res['kc_company']
-                release_time_apply = res['release_time_apply'] if res['release_time_apply'] else ''
-                release_time_applyM = res['release_time_applyM'] if res['release_time_applyM'] else ''
-                release_time_applyO = res['release_time_applyO'] if res['release_time_applyO'] else ''
-                release_time_apply += release_time_applyM + release_time_applyO + '天' if release_time_apply in (
-                    '月结', '其他') else ''
-                credit_limit = "%s%s%s" % (res['credit_limit'] if res['credit_limit'] else '',
-                                           res['unit'] if res['unit'] else '',
-                                           res['currency'] if res['currency'] else '')
-                payment_method_apply = res['payment_method_apply'].replace('per;', '%') if res[
-                    'payment_method_apply'] else ''
-                acceptance_days_apply = res['acceptance_days_apply'] if res['acceptance_days_apply'] else ''
-                telegraphic_days_apply = res['telegraphic_days_apply'] if res['telegraphic_days_apply'] else ''
-                payment_method_apply += acceptance_days_apply + telegraphic_days_apply + '天' if payment_method_apply in (
-                    '承兑', '电汇加承兑') else ''
-                kehu = res['kehu']
-                from . import connect_mssql
-                if kehu == '老客户' and res['current_account_period']:
-                    kehu_ = eval(res['current_account_period'])
-                    isumusd, str_, tup = 0, '', []
-                    for index, item in enumerate(kehu_):
-                        sum_sql = "select iSumOris,iSumUSD from v_GetSalesDetail_Group where companycodename='%s' and cCusName='%s'" % (
-                            item["kc_company"], kc_company)
-                        mssql_res = connect_mssql.connect_mssql.Mssql('ErpCrmDB').query(sum_sql)
-                        isumori, sd = mssql_res[0] if mssql_res else ('', 0)
-                        isumusd += sd
-                        if item["release_time"] == '款到发货':
-                            str_ += """ <tr><td>交易主体:%s;放账时间:%s;交易情况:%s;上年度销售额(原币):%s;</td></tr> """ % \
-                                    (item["kc_company"], item["release_time"], item["transaction_status"],
-                                     str(isumori) if str(isumori) else '0')
-                        else:
-                            str_ += """ <tr><td>交易主体:%s;放账时间:%s;付款方式:%s;信用额度:%s%s;交易情况:%s;上年度销售额(原币):%s;</td></tr> """ % \
-                                    (item["kc_company"], item["release_time"], item["payment_method"],
-                                     item["credit_limit_now"], item["credit_limit_now_currency"],
-                                     item["transaction_status"], str(isumori) if str(isumori) else '0')
 
-                    kehu = """
-                            <div style="margin-left:50px">
-                            <table style="white-space: pre-wrap;">
-                            <tr>
-                            <td>上年度销售额合计(美金)：%s万美元</td>
-                            </tr>
-                        """ % str(isumusd)
-                    kehu = kehu + str_ + """</table></div>"""
-                res_cus = env['xlcrm.account.customer'].sudo().search_read([('review_id', '=', review_id)])
-                # res_cus = res_cus[0] if res_cus else {}
-                res_cus = eval(res['cs']) if res['cs'] else res_cus[0] if res_cus else {}
-                if not res_cus.get('historys'):
-                    res_cus['historys'] = [{'salesment_account': res_cus['salesment_account'],
-                                            'salesment_currency': res_cus['salesment_account'],
-                                            'payment_account': res_cus['salesment_account'],
-                                            'payment_currency': res_cus['salesment_currency']}]
-                registered_capital = res_cus['registered_capital'] if res_cus.get('registered_capital') else ''
-                registered_capital_currency = res_cus['registered_capital_currency'] if res_cus.get(
-                    'registered_capital_currency') else ''
-                registered_capital += registered_capital_currency
-                paid_capital = res_cus['paid_capital'] if res_cus.get('paid_capital') else ''
-                paid_capital_currency = res_cus['paid_capital_currency'] if res_cus.get('paid_capital_currency') else ''
-                paid_capital += paid_capital_currency
-                on_time = '%s%s%s' % (res_cus['on_time'] if res_cus.get('on_time') else '',
-                                      '，%s%s%s' % ('上年至今超30天次数', res_cus['overdue30'], '次') if res_cus.get(
-                                          'overdue30') else '',
-                                      '，%s%s%s' % ('上年至今超60天次数', res_cus['overdue60'], '次') if res_cus.get(
-                                          'overdue60') else '')
-                payment_ = map(lambda x: '%s（%s%s）' % (
-                    x.get('a_company') if x.get('a_company') else a_company, x.get('salesment_account') if x.get(
-                        'salesment_account') else '', x.get('salesment_currency') if x.get(
-                        'salesment_currency') else ''), res_cus.get('historys'))
-
-                payment = '%s' % res_cus['payment'] if res_cus.get('payment') == '新客户' else ';'.join(payment_)
-                res_pm = env['xlcrm.account.pm'].sudo().search_read([('review_id', '=', review_id)])
-                pm = []
-                if res_pm:
-                    pm = map(lambda x: '%s(毛利率：%s%s，原厂账期：%s)' % (x['brandname'], x['profit'], "%", x['account_period']),
-                             res_pm)
-                res_sales = env['xlcrm.account.sales'].sudo().search_read([('review_id', '=', review_id)])[0]
-                customer_type = res_sales['customer_type'] if res_sales['customer_type'] else ''
-                key_customers = res_sales['key_customers'] if res_sales['key_customers'] else ''
-                main_products = res_sales['main_products'] if res_sales['main_products'] else ''
-                annual_turnover = '%s%s' % (res_sales['annual_turnover'] if res_sales['annual_turnover'] else '',
-                                            res_sales['turnover_currency'] if res_sales[
-                                                'turnover_currency'] else '')
-
-                employees = res_sales['employees'] if res_sales['employees'] else ''
-                sa = []
-                if res_sales['products']:
-                    sa = map(lambda x: '%s%s(品牌：%s)' % (
-                        x.get('turnover'), x.get('currency') if x.get('currency') else '', x.get('brandname')),
-                             eval(res_sales['products']))
-                mkt = env['xlcrm.account.pmm'].sudo().search_read([('review_id', '=', review_id)])
-                mkt_agree = map(lambda x: '%s(品牌：%s)/%s' % (x['content'], x['brandname'], x['update_nickname']),
-                                mkt) if mkt else ''
-                # MKT VP意见：%s
-                coo_res = env['xlcrm.account.manage'].sudo().search_read([('review_id', '=', review_id)])
-                coo_agree = 'COO意见：%s' % coo_res[0]['content'] if coo_res else ''
-                from . import send_email
-                email_obj = send_email.Send_email()
-                sbuject = "申请-%s-%s-%s账期表(%s,%s,信用额度%s)" % (
-                    a_company, kc_company, '新增' if res['kehu'] == '新客户' else '更新', release_time_apply,
-                    payment_method_apply,
-                    credit_limit)
-                to = [env['xlcrm.users'].sudo().search_read([('id', '=', res['init_user'][0])])[0]['email']]
-                cc = ['yangyouhui@szsunray.com', 'dengliming@szsunray.com']
-                # to = ['yangwenbo@szsunray.com']
-                # cc = []
-                signer = env['xlcrm.users'].sudo().search_read([('id', 'in', res['account_attend_user_ids'])])
-                signer = ';'.join(map(lambda x: x['email'], signer)) + ';babytse@szsunray.com'  # 添加风控主管谢蓓
-                content = """<html>
-                    <style>
-                         table, td{ 
-                      #border:1px solid black; 
-                      border-collapse:collapse; 
-                    }
-                    </style>
-                    <body>
-                    <p>
-                        审核人邮箱：%s
-                    </p>
-                    夏总，您好：
-                    <p style="text-indent:2em">
-                        %s<b>%s</b>申请账期表，相关信息如下，恳请审批！
-                    </p>                    
-                    <p>
-                        <h4>1)申请项目：</h4>
-                    </p>
-                    <p style="text-indent:2em">
-                        <b>现有账期：</b>%s 
-                    </p>
-                    <p style="text-indent:2em">
-                        <b>申请账期：</b>%s ;信用额度：%s ;付款方式：%s
-                    </p>
-                    <p>
-                        <h4>2)重点情况：</h4>
-                    </p>
-                    <p style="text-indent:2em">
-                        ①注册资本：%s，实缴资本：%s，参保人数：%s人。
-                    </p>
-                    <p style="text-indent:2em">
-                        ②产线及毛利及原厂账期：%s
-                    </p>
-                    <p style="text-indent:2em">
-                        ③历史付款情况：%s;之前一年的销售金额：%s
-                    </p>
-                    <p style="text-indent:2em">
-                        ④客户类型：%s
-                    </p>
-                    <p style="text-indent:2em">
-                        ⑤客户基本情况：主要客户为%s，客户年营业额为%s，预计我司销售额为%s，员工人数%s人
-                    </p>
-                    <p>
-                        <h4>3)其他说明：</h4>
-                    </p>
-                    <p style="text-indent:2em">
-                        MKT VP意见：%s
-                    </p>
-                    <p style="text-indent:2em">
-                        %s
-                    </p>
-                    </body>
-</ht            </html>
-                """ % (signer, a_company, kc_company, kehu, release_time_apply, credit_limit, payment_method_apply,
-                       registered_capital, paid_capital, employees, '、'.join(pm), on_time, payment, customer_type,
-                       key_customers, annual_turnover, '、'.join(sa), employees, '、'.join(mkt_agree), coo_agree)
-                msg = email_obj.send(subject=sbuject, to=to, cc=cc, content=content, env=env)
-                if msg["code"] == 500:  # 邮件发送失败
-                    success = False
-        except Exception as e:
-            success, message = False, str(e)
-        finally:
-            env.cr.close()
-        rp = {'status': 200, 'message': message,
-              'success': success}
-        return json_response(rp)
 
     # @http.route([
     #     '/api/v11/updateFlowerItem/<string:model>',
@@ -8905,12 +8475,10 @@ class XlCrm(http.Controller, Base):
         if not env:
             return no_token()
         try:
-            from . import connect_mssql
-            print('===========start=======')
+            from ..public import connect_mssql
             sql = "select cCusCode,cCusName,cCusType,cCusAbbName from v_Customer_CCF"
-            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
-            print('===========end=======')
             for res in res_sql:
                 tmp = {}
                 tmp['cCusCode'] = res[0]
@@ -8923,7 +8491,6 @@ class XlCrm(http.Controller, Base):
             result, success, message = '', False, str(e)
         finally:
             env.cr.close()
-        print('===========finally=======')
         rp = {'status': 200, 'message': message, 'data': result}
         return json_response(rp)
 
@@ -8938,9 +8505,9 @@ class XlCrm(http.Controller, Base):
         if not env:
             return no_token()
         try:
-            from . import connect_mssql
+            from ..public import connect_mssql
             sql = "select cCode,cName from v_Aa_agreement"
-            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             for res in res_sql:
                 tmp = {}
@@ -8968,10 +8535,10 @@ class XlCrm(http.Controller, Base):
             return no_token()
         try:
             username = kw.get('username')
-            from . import connect_mssql
+            from ..public import connect_mssql
             sql = "select 七级部门名称,六级部门名称,五级部门名称,四级部门名称,三级部门名称,二级部门名称," \
                   "一级部门名称 from v_hr_hi_person where 人员姓名='%s'" % username
-            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             deptname = ''
             if res_sql:
@@ -9001,9 +8568,9 @@ class XlCrm(http.Controller, Base):
             return no_token()
         try:
             ccusname = kw.get('ccusname')
-            from . import connect_mssql
+            from ..public import connect_mssql
             sql = "select distinct companycodename,收款金额,价税合计,cexch_name from v_Custoemr_GetSales where ccusname='%s'" % ccusname
-            mysql = connect_mssql.connect_mssql.Mssql('ErpCrmDB')
+            mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             for res in res_sql:
                 tmp = {}

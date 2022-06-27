@@ -943,10 +943,10 @@ class CCF(BaseInfo):
             current_account_period = []
             profit = []
             if r['current_account_period']:
-                current_account_period = self.literal_eval(r['current_account_period'])
+                current_account_period = eval(r['current_account_period'])
             r['current_account_period'] = current_account_period
             if r['cs']:
-                cs_ = eval(r['cs'])
+                cs_ = self.get_cs_new(r['id'],env)
                 r['registered_captial'] = cs_['registered_capital'] + cs_[
                     'registered_capital_currency']
                 r['paid_capital'] = cs_['paid_capital'] + cs_['paid_capital_currency']
@@ -963,11 +963,13 @@ class CCF(BaseInfo):
                     r['insured_persons'] = res_customer['insured_persons']
             res_fdm = env['xlcrm.account.fd'].sudo().search_read(
                 [('review_id', '=', r['id']), ('station_no', '=', 36)])
+            r['factoring']=''
             if res_fdm:
                 res_fdm = res_fdm[0]
                 r['factoring'] = res_fdm['factoring_limit'] if res_fdm['factoring'] == '有' else res_fdm[
                     'factoring']
             res_lg = env['xlcrm.account.lg'].sudo().search_read([('review_id', '=', r['id'])])
+            r['consignee']=''
             if res_lg:
                 res_lg = res_lg[0]
                 r['consignee'] = res_lg['consignee']
@@ -982,6 +984,7 @@ class CCF(BaseInfo):
                         profit += eval(res_['material_profit'])
 
             r['brand_profit'] = profit
+            r['others']=''
             res_csvp = env['xlcrm.account.csvp'].sudo().search_read([('review_id', '=', r['id'])])
             if res_csvp:
                 res_csvp = res_csvp[0]
@@ -1039,6 +1042,47 @@ class CCF(BaseInfo):
             res_['stock'] = customer_['stock']
             res_['guarantee'] = customer_['guarantee']
 
+        return res_
+
+    def get_cs_new(self, review_id, env):
+        res_ = dict()
+        res_customer = env['xlcrm.account.cus'].sudo().search_read(
+            [('review_id', '=', review_id)])
+        if res_customer:
+            customer_ = res_customer[0]
+            res_['registered_capital'] = customer_['registered_capital'] if customer_['registered_capital'] else ''
+            res_['registered_capital_currency'] = customer_['registered_capital_currency'] if customer_[
+                'registered_capital_currency'] else ''
+            res_['paid_capital'] = customer_['paid_capital'] if customer_['paid_capital'] else ''
+            res_['paid_capital_currency'] = customer_['paid_capital_currency'] if customer_[
+                'paid_capital_currency'] else ''
+            res_['insured_persons'] = customer_['insured_persons'] if customer_['insured_persons'] else ''
+            res_['on_time'] = customer_['on_time'] if customer_['on_time'] else ''
+            res_['overdue30'] = customer_['overdue30'] if customer_['overdue30'] else ''
+            res_['overdue60'] = customer_['overdue60'] if customer_['overdue60'] else ''
+            res_['overdue_others'] = customer_['overdue_others'] if customer_['overdue_others'] else ''
+            res_['payment'] = customer_['payment'] if customer_['payment'] else ''
+            res_['payment_currency'] = customer_['payment_currency'] if customer_['payment_currency'] else ''
+            res_['payment_account'] = customer_['payment_account'] if customer_['payment_account'] else ''
+            res_['salesment_currency'] = customer_['salesment_currency'] if customer_['salesment_currency'] else ''
+            res_['salesment_account'] = customer_['salesment_account'] if customer_['salesment_account'] else ''
+            res_['stock'] = customer_['stock'] if customer_['stock'] else ''
+            res_['guarantee'] = customer_['guarantee'] if customer_['guarantee'] else ''
+            res_['listed_company'] = customer_['listed_company'] if customer_['listed_company'] else ''
+            res_['trade_terms'] = customer_['trade_terms'] if customer_['trade_terms'] else ''
+            res_['remark'] = customer_['remark'] if customer_['remark'] else ''
+            res_his = env['xlcrm.account.cus.his'].sudo().search_read(
+                [('review_id', '=', review_id)])
+            his = []
+            for _his in res_his:
+                tmp = dict()
+                tmp['a_company'] = _his['a_company'] if _his['a_company'] else ''
+                tmp['salesment_account'] = _his['salesment_account'] if _his['salesment_account'] else ''
+                tmp['salesment_currency'] = _his['salesment_currency'] if _his['salesment_currency'] else ''
+                tmp['payment_account'] = _his['payment_account'] if _his['payment_account'] else ''
+                tmp['payment_currency'] = _his['payment_currency'] if _his['payment_currency'] else ''
+                his.append(tmp)
+            res_['historys'] = his
         return res_
 
     def get_si_station(self, station_no, review_id, env):
@@ -1169,7 +1213,7 @@ class CCF(BaseInfo):
             'credit_limit_now': obj_temp['credit_limit_now'] if obj_temp[
                 'credit_limit_now'] else '',
             'current_account_period': kwargs['current_account_period'],
-            'cusdata':kwargs['cusdata'],
+            'cusdata': kwargs['cusdata'],
             'protocol_code': obj_temp['protocol_code'] if obj_temp[
                 'protocol_code'] else '',
             'protocol_detail': obj_temp['protocol_detail'] if obj_temp[
@@ -1354,7 +1398,8 @@ class CCF(BaseInfo):
             data = []
             from . import connect_mssql
             mssql = connect_mssql.Mssql('sales_')
-            mssql.in_up_de("delete from ccf_brandnamed where companycode='%s' and ccuscode='%s'" % (companycode, ccuscode))
+            mssql.in_up_de(
+                "delete from ccf_brandnamed where companycode='%s' and ccuscode='%s'" % (companycode, ccuscode))
             for item in products:
                 brandname = item.get('brandname') if item.get('brandname') else ''
                 material = item.get('material') if item.get('material') else ''
@@ -1371,7 +1416,7 @@ class CCF(BaseInfo):
             mssql.commit()
             mssql.close()
         except Exception as e:
-            print('=======',e)
+            print('=======', e)
 
     @staticmethod
     def insert_brandlimit_toU8(review_id, env):
@@ -1398,8 +1443,9 @@ class CCF(BaseInfo):
                     data = []
                     mssql.in_up_de(
                         f"delete from EF_BrandLimit where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'")
-                    mssql.in_up_de("insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
-                                   f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
+                    mssql.in_up_de(
+                        "insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
+                        f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
                     if pm_res.compliance_material == '是':
                         material = env['xlcrm.material.profit'].sudo().search_read(
                             [('pm_id', '=', p_res.id), ('compliance', '=', '是')], fields=['material', 'init_time'])
@@ -1410,16 +1456,17 @@ class CCF(BaseInfo):
                             start_date = datetime.datetime.strftime(editdate, '%Y-%m-%d')
                             end_date = datetime.datetime.strftime(editdate.replace(year=editdate.year + 99), '%Y-%m-%d')
                             doc_material = list(filter(lambda x: material in x.description.split('，'), doc))
-                            auditer,auditdate = auditer if doc_material else '',doc_material[0].write_date if doc_material else ''
+                            auditer, auditdate = auditer if doc_material else '', doc_material[
+                                0].write_date if doc_material else ''
                             if material:
                                 data.append((company_res[0].a_companycode, ccuscode, material,
-                                             start_date,end_date, editor,
+                                             start_date, end_date, editor,
                                              start_date, auditer,
                                              datetime.datetime.strftime(auditdate, '%Y-%m-%d') if auditdate else ''))
 
                     mssql.batch_in_up_de(
                         [["delete from EF_InvPermit where companyCode=%s and cCusCode=%s and cInvCode=%s",
-                          list(map(lambda x: (x[0], x[1],x[2]), data))], [
+                          list(map(lambda x: (x[0], x[1], x[2]), data))], [
                              "insert into EF_InvPermit(companyCode,cCusCode,cInvCode,cStartDate,cEndDate,cEditor,cEditDate,cAuditer,cAuditDate)values(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                              data]])
                     mssql.commit()

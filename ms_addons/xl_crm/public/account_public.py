@@ -618,7 +618,7 @@ def updateAccountReview(model, data, env):
         send_wechart = True
         if record_status > 0:
             date_main = {}
-            from . import send_email
+            from ..public import send_email
             email_obj = send_email.Send_email()
             next_signer = ''
             if record_status == 1:
@@ -939,8 +939,8 @@ def getaccountlistold(r, env, ap):
 
 
 def sendWechat(subject, to_wechart, url, content, init_user, init_time):
-    from . import connect_mssql
-    wechart = connect_mssql.connect_mssql.Mssql('wechart')
+    from ..public import connect_mssql
+    wechart = connect_mssql.Mssql('wechart')
     send_wechart = wechart.in_up_de(
         "insert into dbo.BusinessTemplateMsg(templateType,userId,url,first,key1,key2)values('" + subject + "','" + to_wechart + "','" + url + "', '" + content + "', '" + init_user + "', '" + init_time + "')")
 

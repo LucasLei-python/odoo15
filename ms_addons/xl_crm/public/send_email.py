@@ -7,7 +7,6 @@ from email.header import Header
 import datetime, pytz
 
 
-
 class Send_email:
     def __init__(self, from_addr="crm@szsunray.com", qqCode="Sunray201911"):
         self.from_addr = from_addr  # 邮件发送账号
@@ -24,7 +23,7 @@ class Send_email:
         self.smtp = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)  # 配置服务器
         self.smtp.login(self.from_addr, self.qqCode)
 
-    def send(self, subject="", to=[], cc=[], content="", subtype='html', env=''):
+    def send(self, subject="", to=[], cc=[], content="", subtype='html', env='', bcc=[], ):
         """
         发送邮件模块
         :param subject: 邮件主旨
@@ -48,8 +47,9 @@ class Send_email:
             self.mail["subject"] = Header(subject, 'utf-8').encode()
             self.mail["from"] = self.from_addr  # 需与邮件服务器的认证用户一致
             self.mail["to"] = ','.join(to)
-            self.mail["cc"] = ','.join(cc)
-            recivers = to + cc
+            self.mail["Cc"] = ','.join(cc)
+            self.mail["Bcc"] = ','.join(bcc)
+            recivers = to + cc + bcc
             self.smtp.sendmail("crm@szsunray.com", recivers, self.mail.as_string())
             self.smtp.quit()
 
@@ -61,6 +61,44 @@ class Send_email:
             if env:
                 env['xlcrm.maillogs'].sudo().create(data)
             return result
+
+    def send_file_email(self, subject="", to=[], cc=[], content="", subtype='plain', env='', file_path='/',
+                        file_name='', bcc=[]):
+        result = {"code": 200, "msg": "发送成功"}
+        tz = pytz.timezone('Asia/Shanghai')
+        subject = "(测试邮件)" + subject
+        subject += datetime.datetime.strftime(datetime.datetime.now(tz=tz), '%Y-%m-%d %H:%M:%S')
+        data = {"code": 200, "message": "发送成功", "subject": subject, "content": content,
+                "to_email": ','.join(to), "cc_email": ','.join(cc)}
+        try:
+            cer_msg = self.certify()
+            if cer_msg:
+                return cer_msg
+            self.mail = MIMEMultipart()
+            self.mail.attach(MIMEText(content, 'plain', 'utf-8'))
+            self.mail["subject"] = Header(subject, 'utf-8').encode()
+            self.mail["from"] = self.from_addr  # 需与邮件服务器的认证用户一致
+            self.mail["Cc"] = ','.join(cc)
+            self.mail["Bcc"] = ','.join(bcc)
+            recivers = to + cc + bcc
+            att1 = MIMEText(open(file_path, 'rb').read(), 'base64', 'utf-8')
+            att1["Content-Type"] = 'application/octet-stream'
+            # 生成附件的名称
+            att1["Content-Disposition"] = 'attachment; filename=' + file_name
+            # 将附件内容插入邮件中
+            self.mail.attach(att1)
+            self.smtp.sendmail("crm@szsunray.com", recivers, self.mail.as_string())
+            self.smtp.quit()
+
+        except Exception as e:
+            result = {"code": 500, "msg": str(e)}
+            data["code"] = 500
+            data["message"] = str(e)
+        finally:
+            if env:
+                env['xlcrm.maillogs'].sudo().create(data)
+            return result
+        pass
 
 
 def getCode():

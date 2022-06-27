@@ -2,7 +2,6 @@
 from odoo import http
 import odoo
 from .controllers_base import Base
-from . import account_public
 import datetime
 from ..public import CCF
 
@@ -57,6 +56,15 @@ class XlCrmCCF(http.Controller, Base, CCF):
             for item in data['affiliates']:
                 item['account'] = review_id
                 self.create('xlcrm.account.affiliates', item, env)
+            env['xlcrm.account.cus'].sudo().search([('review_id', '=', review_id)]).unlink()
+            env['xlcrm.account.cus.his'].sudo().search([('review_id', '=', review_id)]).unlink()
+            cs, historys = data['cs'], data['cs']['historys']
+            if cs:
+                cs['review_id'] = review_id
+                self.create('xlcrm.account.cus', cs, env)
+                for his in historys:
+                    his['review_id'] = review_id
+                    self.create('xlcrm.account.cus.his', his, env)
             cusdata = data.get('cusdata')
             if cusdata:
                 cusdata_999 = dict()
@@ -72,13 +80,13 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 cusdata_999['abbrname'] = data['ccusabbname']
                 cusdata_999['ccusexch_name'] = data['currency']
                 cusdata_999['a_company'] = '999'
-                cusdata_999['sort_code'] = cusdata['sort_code']
-                cusdata_999['payment'] = cusdata['payment']
-                cusdata_999['ccusmngtypecode'] = cusdata['ccusmngtypecode']
-                cusdata_999['account_remark'] = cusdata['account_remark']
-                cusdata_999['ccdefine2'] = cusdata['ccdefine2']
-                cusdata_999['ccusexch_name'] = cusdata['ccusexch_name']
-                cusdata_999['seed_date'] = cusdata['seed_date']
+                cusdata_999['sort_code'] = cusdata.get('sort_code')
+                cusdata_999['payment'] = cusdata.get('payment')
+                cusdata_999['ccusmngtypecode'] = cusdata.get('ccusmngtypecode')
+                cusdata_999['account_remark'] = cusdata.get('account_remark')
+                cusdata_999['ccdefine2'] = cusdata.get('ccdefine2')
+                cusdata_999['ccusexch_name'] = cusdata.get('ccusexch_name')
+                cusdata_999['seed_date'] = cusdata.get('seed_date')
                 for company in ('999', cusdata['a_company']):
                     tar_data = cusdata_999 if company == '999' else cusdata
                     cus = env['xlcrm.u8_customer'].sudo().search(
@@ -176,9 +184,9 @@ class XlCrmCCF(http.Controller, Base, CCF):
             if result:
                 result = result[0]
                 result['type'] = 'set'
-                if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'TEST':
-                    # self.insert_brandnamed_toU8(result)
-                    self.insert_brandlimit_toU8(review_id, env)
+                if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'PRODUCT':
+                    self.insert_brandnamed_toU8(result)
+                    # self.insert_brandlimit_toU8(review_id, env)
                 si_ = str(env.uid)
                 if result['signer'] and si_ in result['signer'].split(','):
                     result['status_id'] = 0
@@ -235,6 +243,115 @@ class XlCrmCCF(http.Controller, Base, CCF):
         return self.json_response(rp)
 
     @http.route([
+        '/api/v11/getAccountDetailByCustomer/<string:model>'
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_account_detail_by_customer(self, model=None, ids=None, **kw):
+        success, message, result, ret_temp, count, offset, limit = True, '', '', {}, 0, 0, 25
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        domain, domain_c = [], []
+        if kw.get("customer"):
+            customer = self.literal_eval(kw.get("customer"))
+            domain_base = [('status_id', '>', 1)]
+            domain = [('kc_company', '=', customer.get("kc_company")), ('a_company', '=', customer.get("a_company")),
+                      ]
+            domain_c = [('kc_company', '=', customer.get("kc_company"))]
+            try:
+                result = env[model].sudo().search_read(domain + domain_base, order='init_time desc', limit=1)
+                if not result:
+                    result = env[model].sudo().search_read(domain_c + domain_base, order='init_time desc',
+                                                           limit=1)
+                if result:
+                    obj_temp = result[0]
+                    model_fields = env[model].fields_get()
+                    for f in obj_temp.keys():
+                        if model_fields[f]['type'] == 'many2one':
+                            if obj_temp[f]:
+                                obj_temp[f] = {'id': obj_temp[f][0], 'display_name': obj_temp[f][1]}
+                            else:
+                                obj_temp[f] = ''
+                    from ..public import account_public
+                    current_account_period = []
+                    if obj_temp['current_account_period']:
+                        current_account_period = self.literal_eval(obj_temp['current_account_period'])
+                    if not current_account_period:
+                        temp = {}
+                        temp['kc_company'] = obj_temp['kc_company']
+                        temp['release_time'] = obj_temp['release_time'] if obj_temp['release_time'] else ''
+                        temp['payment_method'] = obj_temp['payment_method'] if obj_temp['payment_method'] else ''
+                        telegraphic_days = obj_temp['telegraphic_days'] if obj_temp['telegraphic_days'] else ''
+                        acceptance_days = obj_temp['acceptance_days'] if obj_temp[
+                            'acceptance_days'] else ''
+                        days = '' if temp['payment_method'] == '100%电汇' or not temp['payment_method'] else '天'
+                        temp['payment_method'] += telegraphic_days + acceptance_days + days
+                        temp['credit_limit_now'] = obj_temp['credit_limit_now'] if obj_temp[
+                            'credit_limit_now'] else ''
+                        current_account_period.append(temp)
+                    obj_temp['cs'] = self.get_cs_new(obj_temp["id"], env)
+                    ret_temp = {
+                        "id": obj_temp["id"],
+                        "review_type": obj_temp["review_type"],
+                        "apply_user": obj_temp["apply_user"],
+                        "department": obj_temp["department"],
+                        "apply_date": obj_temp["apply_date"],
+                        "a_company": obj_temp["a_company"],
+                        "kc_company": obj_temp["kc_company"],
+                        "ke_company": obj_temp["ke_company"],
+                        "kw_address": obj_temp["kw_address"],
+                        "registered_address": obj_temp["registered_address"],
+                        "kf_address": obj_temp["kf_address"],
+                        "krc_company": obj_temp["krc_company"],
+                        'kre_company': obj_temp["kre_company"],
+                        'kpc_company': obj_temp["kpc_company"],
+                        'kpe_company': obj_temp["kpe_company"],
+                        "de_address": obj_temp["de_address"],
+                        "currency": obj_temp["currency"],
+                        "station_no": obj_temp["station_no"],
+                        "reconciliation_date": obj_temp["reconciliation_date"],
+                        "payment_date": obj_temp["payment_date"],
+                        "account_attend_user_ids": obj_temp["account_attend_user_ids"],
+                        'reviewers': self.literal_eval(obj_temp['reviewers']) if obj_temp['reviewers'] else {},
+                        'products': self.literal_eval(obj_temp['products']) if obj_temp['products'] else [],
+                        'remark': obj_temp['remark'] if obj_temp['remark'] else '',
+                        'kehu': obj_temp['kehu'] if obj_temp['kehu'] else '',
+                        'unit': obj_temp['unit'] if obj_temp['unit'] else '',
+                        'release_time': obj_temp['release_time'] if obj_temp['release_time'] else '',
+                        'payment_method': obj_temp['payment_method'] if obj_temp['payment_method'] else '',
+                        'telegraphic_days': obj_temp['telegraphic_days'] if obj_temp['telegraphic_days'] else '',
+                        'release_time_apply': obj_temp['release_time_apply'] if obj_temp['release_time_apply'] else '',
+                        'release_time_applyM': obj_temp['release_time_applyM'] if obj_temp[
+                            'release_time_applyM'] else '',
+                        'release_time_applyO': obj_temp['release_time_applyO'] if obj_temp[
+                            'release_time_applyO'] else '',
+                        'payment_method_apply': obj_temp['payment_method_apply'] if obj_temp[
+                            'payment_method_apply'] else '',
+                        'acceptance_days_apply': obj_temp['acceptance_days_apply'] if obj_temp[
+                            'acceptance_days_apply'] else '',
+                        'acceptance_days': obj_temp['acceptance_days'] if obj_temp[
+                            'acceptance_days'] else '',
+                        'telegraphic_days_apply': obj_temp['telegraphic_days_apply'] if obj_temp[
+                            'telegraphic_days_apply'] else '',
+                        'credit_limit': obj_temp['credit_limit'] if obj_temp[
+                            'credit_limit'] else '',
+                        'credit_limit_now': obj_temp['credit_limit_now'] if obj_temp[
+                            'credit_limit_now'] else '',
+                        'current_account_period': current_account_period,
+                        'cs': obj_temp['cs'],
+                        'affiliates': eval(obj_temp['affiliates']) if obj_temp['affiliates'] else [],
+                        'protocol_code': obj_temp['protocol_code']
+                    }
+                message = "success"
+            except Exception as e:
+                result, success, message = '', False, str(e)
+            finally:
+                env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': ret_temp}
+        return self.json_response(rp)
+
+    @http.route([
         '/api/v12/getAccountDetailById/<string:model>'
     ], auth='none', type='http', csrf=False, methods=['GET'])
     def get_account_detail_by_id12(self, model=None, ids=None, **kw):
@@ -251,19 +368,20 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 result, ret = env[model].sudo().search_read(domain), {}
                 if result:
                     obj_temp = result[0]
-                    if obj_temp['cs']:
-                        obj_temp['cs'] = eval(obj_temp['cs'])
-                        obj_temp['cs']['remark'] = obj_temp['cs']['remark'] if obj_temp['cs'].get('remark') else ''
-                        obj_temp['cs']['trade_terms'] = obj_temp['cs']['trade_terms'] if obj_temp['cs'].get(
-                            'trade_terms') else ''
-                    else:
-                        obj_temp['cs'] = self.get_cs(review_id, env)
-                    if not obj_temp['cs'].get('historys'):
-                        obj_temp['cs']['historys'] = [{'payment_account': obj_temp['cs'].get('payment_account'),
-                                                       'payment_currency': obj_temp['cs'].get('payment_currency'),
-                                                       'salesment_account': obj_temp['cs'].get('salesment_account'),
-                                                       'salesment_currency': obj_temp['cs'].get('salesment_currency'),
-                                                       }]
+                    # if obj_temp['cs']:
+                    #     obj_temp['cs'] = eval(obj_temp['cs'])
+                    #     obj_temp['cs']['remark'] = obj_temp['cs']['remark'] if obj_temp['cs'].get('remark') else ''
+                    #     obj_temp['cs']['trade_terms'] = obj_temp['cs']['trade_terms'] if obj_temp['cs'].get(
+                    #         'trade_terms') else ''
+                    # else:
+                    #     obj_temp['cs'] = self.get_cs(review_id, env)
+                    # if not obj_temp['cs'].get('historys'):
+                    #     obj_temp['cs']['historys'] = [{'payment_account': obj_temp['cs'].get('payment_account'),
+                    #                                    'payment_currency': obj_temp['cs'].get('payment_currency'),
+                    #                                    'salesment_account': obj_temp['cs'].get('salesment_account'),
+                    #                                    'salesment_currency': obj_temp['cs'].get('salesment_currency'),
+                    #                                    }]
+                    obj_temp['cs'] = self.get_cs_new(review_id, env)
                     si_station = self.get_si_station(obj_temp['station_no'], review_id, env)
                     products = self.literal_eval(obj_temp['products']) if obj_temp['products'] else []
                     products_sign = self.get_products_sign(products, si_station, obj_temp['init_user'][0], env)
@@ -284,10 +402,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     company_res = env['xlcrm.user.ccfnotice'].sudo().search_read(
                         [('a_company', '=', obj_temp['a_company'])])
                     ret['companycode'] = company_res[0]['a_companycode'] if company_res else ''
-                    cusdata = env['xlcrm.u8_customer'].sudo().search_read([('review_id', '=', review_id),('a_company','!=','999')],
-                                                                          fields=['sort_code', 'payment',
-                                                                                  'ccusmngtypecode', 'account_remark',
-                                                                                  'ccdefine2', 'seed_date'])
+                    cusdata = env['xlcrm.u8_customer'].sudo().search_read(
+                        [('review_id', '=', review_id), ('a_company', '!=', '999')],
+                        fields=['sort_code', 'payment',
+                                'ccusmngtypecode', 'account_remark',
+                                'ccdefine2', 'seed_date'])
                     ret['cusdata'] = cusdata[0] if cusdata else {}
                     ret_temp = self.get_detail_by_id(obj_temp, env, **ret)
                 message = "success"
@@ -297,6 +416,197 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 env.cr.close()
 
         rp = {'status': 200, 'message': message, 'data': ret_temp}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/sendSignOverEmail',
+    ], auth='none', type='http', csrf=False, methods=['POST'])
+    def sendSignOverEmail(self, model=None, success=True, message='', **kw):
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        review_id = int(kw.pop('review_id'))
+        if not env:
+            return self.no_token()
+        if not self.check_sign(token, kw):
+            return self.no_sign()
+        try:
+            res = env['xlcrm.account'].sudo().search_read([('id', '=', review_id), ('init_user', '=', env.uid)])
+            if res:
+                res = res[0]
+                a_company = res['a_company']
+                kc_company = res['kc_company']
+                release_time_apply = res['release_time_apply'] if res['release_time_apply'] else ''
+                release_time_applyM = res['release_time_applyM'] if res['release_time_applyM'] else ''
+                release_time_applyO = res['release_time_applyO'] if res['release_time_applyO'] else ''
+                release_time_apply += release_time_applyM + release_time_applyO + '天' if release_time_apply in (
+                    '月结', '其他') else ''
+                credit_limit = "%s%s%s" % (res['credit_limit'] if res['credit_limit'] else '',
+                                           res['unit'] if res['unit'] else '',
+                                           res['currency'] if res['currency'] else '')
+                payment_method_apply = res['payment_method_apply'].replace('per;', '%') if res[
+                    'payment_method_apply'] else ''
+                acceptance_days_apply = res['acceptance_days_apply'] if res['acceptance_days_apply'] else ''
+                telegraphic_days_apply = res['telegraphic_days_apply'] if res['telegraphic_days_apply'] else ''
+                payment_method_apply += acceptance_days_apply + telegraphic_days_apply + '天' if payment_method_apply in (
+                    '承兑', '电汇加承兑') else ''
+                kehu = res['kehu']
+                from ..public import connect_mssql
+                if kehu == '老客户' and res['current_account_period']:
+                    kehu_ = eval(res['current_account_period'])
+                    isumusd, str_, tup = 0, '', []
+                    for index, item in enumerate(kehu_):
+                        sum_sql = "select iSumOris,iSumUSD from v_GetSalesDetail_Group where companycodename='%s' and cCusName='%s'" % (
+                            item["kc_company"], kc_company)
+                        mssql_res = connect_mssql.Mssql('ErpCrmDB').query(sum_sql)
+                        isumori, sd = mssql_res[0] if mssql_res else ('', 0)
+                        isumusd += sd
+                        if item["release_time"] == '款到发货':
+                            str_ += """ <tr><td>交易主体:%s;放账时间:%s;交易情况:%s;上年度销售额(原币):%s;</td></tr> """ % \
+                                    (item["kc_company"], item["release_time"], item["transaction_status"],
+                                     str(isumori) if str(isumori) else '0')
+                        else:
+                            str_ += """ <tr><td>交易主体:%s;放账时间:%s;付款方式:%s;信用额度:%s%s;交易情况:%s;上年度销售额(原币):%s;</td></tr> """ % \
+                                    (item["kc_company"], item["release_time"], item["payment_method"],
+                                     item["credit_limit_now"], item["credit_limit_now_currency"],
+                                     item["transaction_status"], str(isumori) if str(isumori) else '0')
+
+                    kehu = """
+                                <div style="margin-left:50px">
+                                <table style="white-space: pre-wrap;">
+                                <tr>
+                                <td>上年度销售额合计(美金)：%s万美元</td>
+                                </tr>
+                            """ % str(isumusd)
+                    kehu = kehu + str_ + """</table></div>"""
+                # res_cus = env['xlcrm.account.customer'].sudo().search_read([('review_id', '=', review_id)])
+                # res_cus = res_cus[0] if res_cus else {}
+                # res_cus = eval(res['cs']) if res['cs'] else res_cus[0] if res_cus else {}
+                # if not res_cus.get('historys'):
+                #     res_cus['historys'] = [{'salesment_account': res_cus['salesment_account'],
+                #                             'salesment_currency': res_cus['salesment_account'],
+                #                             'payment_account': res_cus['salesment_account'],
+                #                             'payment_currency': res_cus['salesment_currency']}]
+                res_cus = self.get_cs_new(review_id, env)
+                registered_capital = res_cus['registered_capital'] if res_cus.get('registered_capital') else ''
+                registered_capital_currency = res_cus['registered_capital_currency'] if res_cus.get(
+                    'registered_capital_currency') else ''
+                registered_capital += registered_capital_currency
+                paid_capital = res_cus['paid_capital'] if res_cus.get('paid_capital') else ''
+                paid_capital_currency = res_cus['paid_capital_currency'] if res_cus.get('paid_capital_currency') else ''
+                paid_capital += paid_capital_currency
+                on_time = '%s%s%s' % (res_cus['on_time'] if res_cus.get('on_time') else '',
+                                      '，%s%s%s' % ('上年至今超30天次数', res_cus['overdue30'], '次') if res_cus.get(
+                                          'overdue30') else '',
+                                      '，%s%s%s' % ('上年至今超60天次数', res_cus['overdue60'], '次') if res_cus.get(
+                                          'overdue60') else '')
+                payment_ = map(lambda x: '%s（%s%s）' % (
+                    x.get('a_company') if x.get('a_company') else a_company, x.get('salesment_account') if x.get(
+                        'salesment_account') else '', x.get('salesment_currency') if x.get(
+                        'salesment_currency') else ''), res_cus.get('historys'))
+
+                payment = '%s' % res_cus['payment'] if res_cus.get('payment') == '新客户' else ';'.join(payment_)
+                res_pm = env['xlcrm.account.pm'].sudo().search_read([('review_id', '=', review_id)])
+                pm = []
+                if res_pm:
+                    pm = map(lambda x: '%s(毛利率：%s%s，原厂账期：%s)' % (x['brandname'], x['profit'], "%", x['account_period']),
+                             res_pm)
+                res_sales = env['xlcrm.account.sales'].sudo().search_read([('review_id', '=', review_id)])[0]
+                customer_type = res_sales['customer_type'] if res_sales['customer_type'] else ''
+                key_customers = res_sales['key_customers'] if res_sales['key_customers'] else ''
+                main_products = res_sales['main_products'] if res_sales['main_products'] else ''
+                annual_turnover = '%s%s' % (res_sales['annual_turnover'] if res_sales['annual_turnover'] else '',
+                                            res_sales['turnover_currency'] if res_sales[
+                                                'turnover_currency'] else '')
+
+                employees = res_sales['employees'] if res_sales['employees'] else ''
+                sa = []
+                if res_sales['products']:
+                    sa = map(lambda x: '%s%s(品牌：%s)' % (
+                        x.get('turnover'), x.get('currency') if x.get('currency') else '', x.get('brandname')),
+                             eval(res_sales['products']))
+                mkt = env['xlcrm.account.pmm'].sudo().search_read([('review_id', '=', review_id)])
+                mkt_agree = map(lambda x: '%s(品牌：%s)/%s' % (x['content'], x['brandname'], x['update_nickname']),
+                                mkt) if mkt else ''
+                # MKT VP意见：%s
+                coo_res = env['xlcrm.account.manage'].sudo().search_read([('review_id', '=', review_id)])
+                coo_agree = 'COO意见：%s' % coo_res[0]['content'] if coo_res else ''
+                from ..public import send_email
+                email_obj = send_email.Send_email()
+                sbuject = "申请-%s-%s-%s账期表(%s,%s,信用额度%s)" % (
+                    a_company, kc_company, '新增' if res['kehu'] == '新客户' else '更新', release_time_apply,
+                    payment_method_apply,
+                    credit_limit)
+                to = [env['xlcrm.users'].sudo().search_read([('id', '=', res['init_user'][0])])[0]['email']]
+                cc = ['yangyouhui@szsunray.com', 'dengliming@szsunray.com']
+                # to = ['yangwenbo@szsunray.com']
+                # cc = []
+                signer = env['xlcrm.users'].sudo().search_read([('id', 'in', res['account_attend_user_ids'])])
+                signer = ';'.join(map(lambda x: x['email'], signer)) + ';babytse@szsunray.com'  # 添加风控主管谢蓓
+                content = """<html>
+                        <style>
+                             table, td{ 
+                          #border:1px solid black; 
+                          border-collapse:collapse; 
+                        }
+                        </style>
+                        <body>
+                        <p>
+                            审核人邮箱：%s
+                        </p>
+                        夏总，您好：
+                        <p style="text-indent:2em">
+                            %s<b>%s</b>申请账期表，相关信息如下，恳请审批！
+                        </p>                    
+                        <p>
+                            <h4>1)申请项目：</h4>
+                        </p>
+                        <p style="text-indent:2em">
+                            <b>现有账期：</b>%s 
+                        </p>
+                        <p style="text-indent:2em">
+                            <b>申请账期：</b>%s ;信用额度：%s ;付款方式：%s
+                        </p>
+                        <p>
+                            <h4>2)重点情况：</h4>
+                        </p>
+                        <p style="text-indent:2em">
+                            ①注册资本：%s，实缴资本：%s，参保人数：%s人。
+                        </p>
+                        <p style="text-indent:2em">
+                            ②产线及毛利及原厂账期：%s
+                        </p>
+                        <p style="text-indent:2em">
+                            ③历史付款情况：%s;之前一年的销售金额：%s
+                        </p>
+                        <p style="text-indent:2em">
+                            ④客户类型：%s
+                        </p>
+                        <p style="text-indent:2em">
+                            ⑤客户基本情况：主要客户为%s，客户年营业额为%s，预计我司销售额为%s，员工人数%s人
+                        </p>
+                        <p>
+                            <h4>3)其他说明：</h4>
+                        </p>
+                        <p style="text-indent:2em">
+                            MKT VP意见：%s
+                        </p>
+                        <p style="text-indent:2em">
+                            %s
+                        </p>
+                        </body>
+    </ht            </html>
+                    """ % (signer, a_company, kc_company, kehu, release_time_apply, credit_limit, payment_method_apply,
+                           registered_capital, paid_capital, employees, '、'.join(pm), on_time, payment, customer_type,
+                           key_customers, annual_turnover, '、'.join(sa), employees, '、'.join(mkt_agree), coo_agree)
+                msg = email_obj.send(subject=sbuject, to=to, cc=cc, content=content, env=env)
+                if msg["code"] == 500:  # 邮件发送失败
+                    success = False
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            env.cr.close()
+        rp = {'status': 200, 'message': message,
+              'success': success}
         return self.json_response(rp)
 
     @http.route([
@@ -488,7 +798,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not env:
             return self.no_token()
         try:
-            from . import account_public
+            from ..public import account_public
             review_id = self.literal_eval(kw.get("review_id"))
             data = {}
             model = 'xlcrm.account'
@@ -635,8 +945,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
-            mssql = connect_mssql.connect_mssql.Mssql('stock')
+            from ..public import connect_mssql
+            mssql = connect_mssql.Mssql('stock')
             res = mssql.query('select distinct [品牌] from [v_Inventory_sunray]')
             for _res in res:
                 data.append(_res[0])
@@ -654,11 +964,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
+            from ..public import connect_mssql
             con_str = '158_999'
             if odoo.tools.config["enviroment"] == 'PRODUCT':
                 con_str = '154_999'
-            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            mssql = connect_mssql.Mssql(con_str)
             res = mssql.query('select cValue from UserDefine where cID=70')
             for _res in res:
                 data.append(_res[0])
@@ -676,11 +986,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
+            from ..public import connect_mssql
             con_str = '158_999'
             if odoo.tools.config["enviroment"] == 'PRODUCT':
                 con_str = '154_999'
-            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            mssql = connect_mssql.Mssql(con_str)
             res = mssql.query('select cValue from UserDefine where cID=65')
             for _res in res:
                 data.append(_res[0])
@@ -699,8 +1009,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
             return self.no_token()
         try:
             brand_name = kw.get('brand_name')
-            from . import connect_mssql
-            mssql = connect_mssql.connect_mssql.Mssql('stock')
+            from ..public import connect_mssql
+            mssql = connect_mssql.Mssql('stock')
             sql = "select [品牌],[存货编号] from [v_Inventory_sunray] where 品牌='%s'" % brand_name
             res = mssql.query(sql)
             for _res in res:
@@ -722,11 +1032,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
+            from ..public import connect_mssql
             con_str = '158_999'
             if odoo.tools.config["enviroment"] == 'PRODUCT':
                 con_str = '154_999'
-            mssql = connect_mssql.connect_mssql.Mssql(con_str)
+            mssql = connect_mssql.Mssql(con_str)
             res = mssql.query('select cCCCode,cCCName from CustomerClass where iCCGrade=4')
             for _res in res:
                 data.append({'value': _res[0], 'label': _res[1]})
@@ -890,7 +1200,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 res_id = kw.get('res_id')
                 materials = kw.get('materials')
                 description = materials if materials else ''
-                from . import account_public
+                from ..public import account_public
                 success, url, name, size, message = account_public.saveFile(env.uid, file)
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}

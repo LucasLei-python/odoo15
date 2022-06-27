@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, fields, models
-from ..public import send_email_ToU8_EF
+from odoo import api, fields, models,registry
+import odoo
+from ..public import send_email_ToU8_EF,send_email_ToCUS_Account
 
 
 class Xlaccount(models.Model):
@@ -102,3 +103,19 @@ class Xlaccount(models.Model):
     @api.model
     def task(self):
         send_email_ToU8_EF()
+
+    @api.model
+    def send_mail_list(self):
+        try:
+            cr, env = self.get_env()
+            send_email_ToCUS_Account(env)
+            cr.close()
+        except Exception as e:
+            print(e)
+
+    @staticmethod
+    def get_env():
+        db = odoo.tools.config['db_name']
+        cr = registry(db).cursor()
+        env = api.Environment(cr, '', {})
+        return cr, env

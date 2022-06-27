@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from odoo import http, api, registry
 from odoo import tools
-from .public import *
+from ..public import public as p
+
 from .controllers_base import Base
 
 
@@ -74,13 +75,13 @@ class XlCrmExtend(http.Controller, Base):
         success, message, re_overdue, overdue, overdue_arrears, re_overdue_arrears = True, '', [], [], '无', '无'
         token = kw.pop('token')
         data = self.literal_eval(kw.get('data'))
-        public = Public()
+        public = p.Public()
         env = self.authenticate(token)
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
-            mssql = connect_mssql.connect_mssql.Mssql('stock')
+            from ..public import connect_mssql
+            mssql = connect_mssql.Mssql('stock')
             cus = data.get('cus')
             re_cus = data.get('re_cus') if data.get('re_cus') else []
             re_cus.append(cus)
@@ -117,13 +118,13 @@ class XlCrmExtend(http.Controller, Base):
         success, message, re_payment, payment, overdue_payment, re_overdue_payment = True, '', [], [], '无', '无'
         token = kw.pop('token')
         data = self.literal_eval(kw.get('data'))
-        public = Public()
+        public = p.Public()
         env = self.authenticate(token)
         if not env:
             return self.no_token()
         try:
-            from . import connect_mssql
-            mssql = connect_mssql.connect_mssql.Mssql('stock')
+            from ..public import connect_mssql
+            mssql = connect_mssql.Mssql('stock')
             cus = data.get('cus')
             re_cus = data.get('re_cus') if data.get('re_cus') else []
             re_cus.append(cus)
@@ -398,7 +399,7 @@ class XlCrmExtend(http.Controller, Base):
     ], auth='none', type='http', csrf=False, methods=['GET'])
     def get_last_log(self, model=None, success=True, message='', **kw):
         success, message, data = True, '', []
-        token = kw.pop('token')
+        token, types = kw.pop('token'), kw.pop('types')
         if token != tools.config['api_key']:
             return self.json_response({'status': 200, 'data': data, 'success': False, 'message': 'token错误'})
         try:
@@ -409,65 +410,73 @@ class XlCrmExtend(http.Controller, Base):
             data_account, data_payment, data_profit = '<tb_account>', '<tb_payment>', '<tb_profit>'
             for _res in res:
                 tmp, tmp_payment, tmp_profit = '', '', ''
-                tmp += f'<row>'
-                tmp += f'<id>{_res.id}</id>'
-                sales = env['xlcrm.account.sales'].sudo().search([('review_id', '=', _res.id)], limit=1)
-                tmp += f'<apply_user>{_res.apply_user}</apply_user>'
-                tmp += f'<department>{_res.department}</department>'
-                tmp += f'<kc_company>{_res.kc_company}</kc_company>'
-                tmp += f'<sales_nickname>{sales.init_user.nickname}</sales_nickname>'
-                tmp += f'<sales_dept>{sales.init_user.department_id.name}</sales_dept>'
-                tmp += f'<currency>{_res.currency}</currency>'
-                tmp += f"<status>{'未建档' if _res.kehu == '新客户' else '已建档'}</status>"
-                tmp += f"<account>{_res.release_time_apply}</account>"
-                payment = ''
-                if _res.release_time_apply:
-                    payment = _res.release_time_apply.replace('amp;', '&').replace('eq;', '='). \
-                        replace('plus;', '+').replace('per;', '%')
-                    if _res.acceptance_days_apply or _res.telegraphic_days_apply:
-                        payment += _res.acceptance_days_apply + _res.telegraphic_days_apply + '天'
-                    else:
-                        payment += _res.others_apply if _res.others_apply else ''
-                elif _res.release_time_apply_new:
-                    payment = _res.release_time_apply_new.replace('amp;', '&').replace('eq;', '='). \
-                        replace('plus;', '+').replace('per;', '%')
-                    if _res.wire_apply_type:
-                        payment += _res.wire_apply_type + str(_res.wire_apply_days) + '天'
-                    elif _res.days_apply_type:
-                        payment += _res.days_apply_type + str(_res.days_apply_days) + '天'
-                    else:
-                        payment += _res.others_apply
-                tmp += f"<payment>{payment}</payment>"
+                if types == 'account':
+                    tmp += f'<row>'
+                    tmp += f'<id>{_res.id}</id>'
+                    sales = env['xlcrm.account.sales'].sudo().search([('review_id', '=', _res.id)], limit=1)
+                    tmp += f'<apply_user>{_res.apply_user}</apply_user>'
+                    tmp += f'<department>{_res.department}</department>'
+                    tmp += f'<kc_company>{_res.kc_company}</kc_company>'
+                    tmp += f'<sales_nickname>{sales.init_user.nickname}</sales_nickname>'
+                    tmp += f'<sales_dept>{sales.init_user.department_id.name}</sales_dept>'
+                    tmp += f'<currency>{_res.currency}</currency>'
+                    tmp += f"<status>{'未建档' if _res.kehu == '新客户' else '已建档'}</status>"
+                    tmp += f"<account>{_res.release_time_apply}</account>"
+                    payment = ''
+                    if _res.release_time_apply:
+                        payment = _res.release_time_apply.replace('amp;', '&').replace('eq;', '='). \
+                            replace('plus;', '+').replace('per;', '%')
+                        if _res.acceptance_days_apply or _res.telegraphic_days_apply:
+                            payment += _res.acceptance_days_apply + _res.telegraphic_days_apply + '天'
+                        else:
+                            payment += _res.others_apply if _res.others_apply else ''
+                    elif _res.release_time_apply_new:
+                        payment = _res.release_time_apply_new.replace('amp;', '&').replace('eq;', '='). \
+                            replace('plus;', '+').replace('per;', '%')
+                        if _res.wire_apply_type:
+                            payment += _res.wire_apply_type + str(_res.wire_apply_days) + '天'
+                        elif _res.days_apply_type:
+                            payment += _res.days_apply_type + str(_res.days_apply_days) + '天'
+                        else:
+                            payment += _res.others_apply
+                    tmp += f"<payment>{payment}</payment>"
                 payment_status = ''
                 cs = eval(_res.cs) if _res.cs else ''
                 if cs:
                     payment_status = cs.get('on_time')
                     his = cs.get('historys', [])
-                    for item in his:
-                        if item:
-                            tmp_payment += f"<row><a_id>{_res.id}</a_id>" \
-                                           f"<account>{item.get('a_company', _res.a_company)}<account/>" \
-                                           f"<payment>{str(item.get('payment_account', '')) + item.get('payment_currency', '')}</payment></row>"
+                    if types == 'payment':
+                        for item in his:
+                            if item:
+                                tmp_payment += f"<row><a_id>{_res.id}</a_id>" \
+                                               f"<account>{item.get('a_company', _res.a_company)}</account>" \
+                                               f"<payment>{str(item.get('payment_account', '')) + item.get('payment_currency', '')}</payment></row>"
                 tmp += f"<payment_status>{payment_status}</payment_status>"
                 pm = env['xlcrm.account.pm'].sudo().search([('review_id', '=', _res.id)])
                 brandname = ''
                 for _pm in pm:
                     brandname_ = _pm.brandname.split('_index')[0] if _pm.brandname else ''
-                    brandname += brandname_
-                    mater_profit = env['xlcrm.material.profit'].sudo().search([('pm_id', '=', _pm.id)])
-                    for m_p in mater_profit:
-                        tmp_profit += f"<row><a_id>{_res.id}</a_id><brandname>{brandname_}</brandname>" \
-                                      f"<material>{m_p.material}</material><profit>{m_p.profit}</profit></row>"
+                    brandname = brandname + ',' + brandname_ if brandname else brandname_
+                    if types == 'profit':
+                        mater_profit = env['xlcrm.material.profit'].sudo().search([('pm_id', '=', _pm.id)])
+                        for m_p in mater_profit:
+                            tmp_profit += f"<row><a_id>{_res.id}</a_id><brandname>{brandname_}</brandname>" \
+                                          f"<material>{m_p.material}</material><profit>{m_p.profit}</profit></row>"
                 tmp += f"<brandname>{brandname}</brandname>"
                 data_account += tmp + '</row>'
                 data_payment += tmp_payment
                 data_profit += tmp_profit
-            data = f"<root>{data_account}</tb_account>{data_payment}</tb_payment>{data_profit}</tb_profit></root>"
+            if types == 'account':
+                data = data_account
+            elif types == 'payment':
+                data = data_payment
+            else:
+                data = data_profit
+            data = f"<root>{data}</tb_{types}></root>"
+            # data = f"<root>{data_account}</tb_account>{data_profit}</tb_profit></root>"
             env.cr.close()
             # data = json_to_xml('root', data)
         except Exception as e:
             success, message = False, str(e)
         finally:
-            return self.json_response(data)
-
-
+            return self.xml_response(data)
