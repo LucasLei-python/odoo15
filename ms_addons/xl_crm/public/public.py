@@ -148,3 +148,42 @@ class Overdue(controllers_base.Base):
             elif overdue29_ > 0:
                 overdue29 += 1
         return overdue29, overdue30, overdue60, overdue90
+
+
+def u8_account_name(code, enviroment):
+    name = {
+        'TEST': {
+            "103": "UFDATA_103_2017",
+            "601": "UFDATA_601_2017",
+            "606": "UFDATA_606_2021",
+            "101": "UFDATA_101_2017",
+            "110": "UFDATA_110_2021",
+            "151": "UFDATA_151_2017",
+            "602": "UFDATA_602_2017",
+            "611": "UFDATA_611_2017",
+            "201": "UFDATA_201_2017",
+            "106": "UFDATA_106_2017",
+            "108": "UFDATA_108_2017",
+            "613": "UFDATA_613_2017",
+            "133": "UFDATA_133_2017",
+            "111": "UFDATA_111_2017",
+            "999": "UFDATA_999_2017"
+        },
+        'PRODUCT': {
+            '101': 'UFDATA_101_2017',
+            '103': 'UFDATA_103_2017',
+            '106': 'UFDATA_106_2017',
+            '108': 'UFDATA_108_2017',
+            '603': 'UFDATA_603_2017',
+            '105': 'UFDATA_105_2018',
+            '109': 'UFDATA_109_2022',
+            '604': 'UFDATA_604_2017',
+            '605': 'UFDATA_605_2022',
+            '601': 'UFDATA_601_2017',
+            '602': 'UFDATA_602_2017',
+            '606': 'UFDATA_606_2021',
+            '102': 'UFDATA_102_2017',
+
+        },
+    }
+    return name[code]

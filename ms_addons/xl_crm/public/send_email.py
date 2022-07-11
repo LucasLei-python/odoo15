@@ -78,6 +78,7 @@ class Send_email:
             self.mail.attach(MIMEText(content, 'plain', 'utf-8'))
             self.mail["subject"] = Header(subject, 'utf-8').encode()
             self.mail["from"] = self.from_addr  # 需与邮件服务器的认证用户一致
+            self.mail["to"] = ','.join(to)
             self.mail["Cc"] = ','.join(cc)
             self.mail["Bcc"] = ','.join(bcc)
             recivers = to + cc + bcc

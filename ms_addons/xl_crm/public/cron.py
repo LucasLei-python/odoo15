@@ -39,6 +39,8 @@ class Aps:
             to_time = datetime.datetime.today().replace(hour=10, minute=0, second=0)
             day = datetime.datetime.weekday(datetime.datetime.today())
             from_time = to_time - datetime.timedelta(days=day + 1)
+            # to_time = datetime.datetime.strptime('2022-06-26 10:00:00', '%Y-%m-%d %H:%M:%S')
+            # from_time = datetime.datetime.strptime('2022-06-19 10:00:00', '%Y-%m-%d %H:%M:%S')
             to_email = [odoo.tools.config["test_username"]]
             cc_email = []
             bcc_email = []
@@ -245,6 +247,28 @@ class Aps:
                     desc['msg'] = resp['item']['@dsc']
             else:
                 desc['msg'] = login.text
+        except Exception as e:
+            desc['msg'] = e
+        finally:
+            return desc
+
+    @staticmethod
+    def synchronization_cus_mcode(res):
+        desc = dict()
+        from .public import u8_account_name
+        try:
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            count = set(map(lambda x: x.a_company, res))
+            for _c in count:
+                query_data = list(map(lambda item: (item.ccusmnemcode, item.code), filter(lambda x: x.a_company == _c, res)))
+                mssql.batch_in_up_de(
+                    [[f'update {u8_account_name(_c,odoo.tools.config["enviroment"])}.dbo.Customer set ccusmnemcode=%s where cCusCode=%s', query_data]])
+            mssql.commit()
+            mssql.close()
+            desc['msg'] = 'ok'
         except Exception as e:
             desc['msg'] = e
         finally:

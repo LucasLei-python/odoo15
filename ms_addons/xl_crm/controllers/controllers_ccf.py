@@ -186,7 +186,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 result['type'] = 'set'
                 if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'PRODUCT':
                     self.insert_brandnamed_toU8(result)
-                    # self.insert_brandlimit_toU8(review_id, env)
+                    self.insert_brandlimit_toU8(review_id, env)
                 si_ = str(env.uid)
                 if result['signer'] and si_ in result['signer'].split(','):
                     result['status_id'] = 0

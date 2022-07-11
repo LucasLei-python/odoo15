@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-import pymssql
+import pymssql,psycopg2
 
 
 class Mssql(object):
@@ -68,14 +68,29 @@ class Mssql(object):
             },
             "154_999": {
                 'host': '192.168.0.154',
-                'user': 'leihui',
-                'password': 'leihui',
+                'user': 'crm',
+                'password': 'crm',
                 'database': 'UFDATA_999_2017',
                 'port': 1433,
                 'charset': 'utf8'
+            },
+            "168": {
+                'host': '192.168.0.168',
+                'user': 'odoosunray',
+                'password': '111111',
+                'database': 'odoosunray',
+                'port': 5432,
+            },
+            "161": {
+                'host': '192.168.0.161',
+                'user': 'odoosunray',
+                'password': '111111',
+                'database': 'odoosunray',
+                'port': 5432
             }
         }
-        self.__db = pymssql.connect(**dict_db[dbselect])
+        condb = psycopg2 if dbselect in ('168','161') else pymssql
+        self.__db = condb.connect(**dict_db[dbselect])
 
     # 查询
     def query(self, sql, list_paramers=None, size=None):

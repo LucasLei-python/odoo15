@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from odoo import http, api, registry
 from odoo import tools
-from ..public import public as p
+from ..public import public as p, connect_mssql as con
 
 from .controllers_base import Base
+import datetime
 
 
 class XlCrmExtend(http.Controller, Base):
@@ -397,7 +398,7 @@ class XlCrmExtend(http.Controller, Base):
     @http.route([
         '/api/v11/getAccountToOA',
     ], auth='none', type='http', csrf=False, methods=['GET'])
-    def get_last_log(self, model=None, success=True, message='', **kw):
+    def get_account_to_oa(self, model=None, success=True, message='', **kw):
         success, message, data = True, '', []
         token, types = kw.pop('token'), kw.pop('types')
         if token != tools.config['api_key']:
@@ -480,3 +481,186 @@ class XlCrmExtend(http.Controller, Base):
             success, message = False, str(e)
         finally:
             return self.xml_response(data)
+
+    @http.route([
+        '/api/v11/getCusList',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_cus_list(self, model=None, success=True, message='', **kw):
+        success, message, result, company, count, offset, limit = True, '', [], [], 0, 0, 5000
+        try:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            if kw.get("data"):
+                query_filter = self.literal_eval(kw.get("data"))
+                offset = query_filter.pop("page_no") - 1
+                limit = query_filter.pop("page_size")
+                db_str = '161' if tools.config['enviroment'] == 'PRODUCT' else '168'
+                pgsql = con.Mssql(db_str)
+                query, query_company = '', ''
+                user = env['xlcrm.users'].sudo().search([('id', '=', env.uid)])
+                if user:
+                    sign_power = 1
+                    if query_filter.get('a_company'):
+                        query_company = f" and a.a_company='{query_filter.get('a_company')}'"
+                    if user.group_id.name != 'Manager':
+                        header = pgsql.query(f"select name from person_header_u8 where header='{user.nickname}'")
+                        if header:
+                            tmp_query = f" and a.cpersonname in {tuple(map(lambda x:x[0],header))}"
+                        else:
+                            sign_power = 0
+                            tmp_query = f" and a.cpersonname='{user.nickname}'"
+                        power_res = pgsql.query(
+                            f"select distinct a.caccode from person_from_u8 a where 1=1 {tmp_query}{query}")
+                        if power_res:
+                            power = list(map(lambda x: x[0], power_res))
+                            query += f" and privilege_id in {tuple(power)}"
+                    if query_filter.get('status') in (0, 1, 2, 3, 4):
+                        query += f' and COALESCE (b.status, 0)={query_filter.get("status")}'
+
+                    if query_filter.get('ccusname'):
+                        query += f" and ccusname like '%{query_filter.get('ccusname')}%'"
+
+                    if query_filter.get('cdepname'):
+                        query += f" and cdepname like '%{query_filter.get('cdepname')}%'"
+
+                    if query_filter.get('cpersonname'):
+                        query += f" and cpersonname like '%{query_filter.get('cpersonname')}%'"
+
+                    base_sql = f"select distinct a.a_company,a.ccuscode,a.ccusname,a.ccusdefine7,a.ccdefine3,COALESCE(b.ccusmnemcode, a.ccusmnemcode),a.cdepname,a.cpersonname," \
+                               f"COALESCE (b.status, 0) as status from cus_from_u8 a left join u8_cus_synchronize b on a.a_company=b.a_company and a.ccuscode=b.code where 1=1 and a.ccusmnemcode is null "
+
+                    res = pgsql.query(
+                        f"{base_sql}{query_company}{query} order by a.ccuscode offset {offset * limit} limit {limit}")
+                    for item in res:
+                        result.append(
+                            {'a_company': item[0], 'ccuscode': item[1], 'ccusname': item[2], 'ccusdefine7': item[3]
+                                , 'ccdefine3': item[4], 'ccusmnemcode': item[5], 'sales_dept': item[6],
+                             'spec_operator': item[7], 'status': item[8],'sign_power':sign_power})
+                    res_count = pgsql.query(f"select count(1) from ({base_sql}{query_company}{query}) a")
+                    count = res_count[0][0] if res_count else 0
+                    company = list(
+                        map(lambda x: x[0], pgsql.query(f'select distinct a_company from ({base_sql}{query}) a')))
+
+                message = "success"
+                success = True
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'success': success, 'data': result, 'company': company, 'total': count,
+              'page': offset + 1,
+              'per_page': limit}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/setCusItem',
+    ], auth='none', type='http', csrf=False, methods=['POST'])
+    def set_cus_item(self, model=None, success=True, message='', **kw):
+        success, message = True, ''
+        try:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            data = self.literal_eval(list(kw.keys())[0].replace('null', "''").replace('false', "''")).get("data")
+            a_company = data.get('a_company')
+            code = data.get('ccuscode')
+            name = data.get('ccusname')
+            abbrname = data.get('ccusabbname')
+            ccusdefine7 = data.get('ccusdefine7')
+            ccusdefine3 = data.get('ccusdefine3')
+            ccusmnemcode = data.get('ccusmnemcode')
+            status = data.get("status")
+            nickname = env['xlcrm.users'].sudo().search([('id','=',env.uid)],limit=1).nickname
+            for company in (a_company, '999'):
+                res = env['u8.cus.synchronize'].sudo().search(
+                    [('a_company', '=', company), ('code', '=', code), ('status', '<', 5)])
+                if not res or (res.status == 4 and company != '999'):
+                    save_time, save_user = datetime.datetime.now(), nickname
+                    if res.status == 4 and company != '999':
+                        res.status = 5
+                    env['u8.cus.synchronize'].sudo().create({'a_company': company, 'code': code,
+                                                             'name': name, 'abbrname': abbrname,
+                                                             'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
+                                                             'ccusmnemcode': ccusmnemcode, 'status': status,
+                                                             'save_time': save_time, 'save_user': save_user})
+                else:
+                    save_time, save_user = datetime.datetime.now(), nickname
+                    write_data = {'a_company': company, 'code': code,
+                                  'name': name, 'abbrname': abbrname,
+                                  'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
+                                  'ccusmnemcode': ccusmnemcode, 'status': status,'save_time': save_time, 'save_user': save_user}
+                    if status == 3:
+                        write_data.pop('save_time')
+                        write_data.pop('save_user')
+                        write_data['approval_time'], write_data['approval_user'] = datetime.datetime.now(), env.uid
+                    res.write(write_data)
+            message = "success"
+            success = True
+            env.cr.commit()
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'success': success}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/batchSetCusItem',
+    ], auth='none', type='http', csrf=False, methods=['POST'])
+    def batch_set_cus_item(self, model=None, success=True, message='', **kw):
+        success, message = True, ''
+        try:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            data = self.literal_eval(
+                list(kw.keys())[0].replace('null', "''").replace('false', "''").replace('true', "''")).get("data")
+            status = 2 if data.get('action') == 'save' else 3
+            nickname = env['xlcrm.users'].sudo().search([('id', '=', env.uid)], limit=1).nickname
+            for item in data.get('data'):
+                a_company = item.get('a_company')
+                code = item.get('ccuscode')
+                name = item.get('ccusname')
+                abbrname = item.get('ccusabbname')
+                ccusdefine7 = item.get('ccusdefine7')
+                ccusdefine3 = item.get('ccusdefine3')
+                ccusmnemcode = item.get('ccusmnemcode')
+                for company in (a_company, '999'):
+                    res = env['u8.cus.synchronize'].sudo().search(
+                        [('a_company', '=', company), ('code', '=', code), ('status', '<', 5)])
+                    if not res or (res.status == 4 and company != '999'):
+                        save_time, save_user = datetime.datetime.now(), nickname
+                        if res.status == 4 and company != '999':
+                            res.status = 5
+                        env['u8.cus.synchronize'].sudo().create({'a_company': company, 'code': code,
+                                                                 'name': name, 'abbrname': abbrname,
+                                                                 'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
+                                                                 'ccusmnemcode': ccusmnemcode, 'status': status,
+                                                                 'save_time': save_time, 'save_user': save_user})
+                    else:
+                        save_time, save_user = datetime.datetime.now(), nickname
+                        write_data = {'a_company': company, 'code': code,
+                                      'name': name, 'abbrname': abbrname,
+                                      'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
+                                      'ccusmnemcode': ccusmnemcode, 'status': status,'save_time': save_time, 'save_user': save_user}
+                        if status == 3:
+                            write_data.pop('save_time')
+                            write_data.pop('save_user')
+                            write_data['approval_time'], write_data['approval_user'] = datetime.datetime.now(), nickname
+                        res.write(write_data)
+            message = "success"
+            success = True
+            env.cr.commit()
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'success': success}
+        return self.json_response(rp)

@@ -602,6 +602,46 @@ class CCF(BaseInfo):
                 for item in data['affiliates']:
                     item['account'] = review_id
                     self.create('xlcrm.account.affiliates', item, env)
+                env['xlcrm.account.cus'].sudo().search([('review_id', '=', review_id)]).unlink()
+                env['xlcrm.account.cus.his'].sudo().search([('review_id', '=', review_id)]).unlink()
+                cs, historys = data['cs'], data['cs']['historys']
+                if cs:
+                    cs['review_id'] = review_id
+                    self.create('xlcrm.account.cus', cs, env)
+                    for his in historys:
+                        his['review_id'] = review_id
+                        self.create('xlcrm.account.cus.his', his, env)
+                cusdata = data.get('cusdata')
+                if cusdata:
+                    cusdata_999 = dict()
+                    company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])],
+                                                                             limit=1)
+                    cusdata['review_id'] = review_id
+                    cusdata['name'] = data['kc_company']
+                    cusdata['abbrname'] = data['ccusabbname']
+                    cusdata['ccusexch_name'] = data['currency']
+                    cusdata['a_company'] = company_code.a_companycode if company_code else ''
+                    cusdata_999['review_id'] = review_id
+                    cusdata_999['name'] = data['kc_company']
+                    cusdata_999['abbrname'] = data['ccusabbname']
+                    cusdata_999['ccusexch_name'] = data['currency']
+                    cusdata_999['a_company'] = '999'
+                    cusdata_999['sort_code'] = cusdata.get('sort_code')
+                    cusdata_999['payment'] = cusdata.get('payment')
+                    cusdata_999['ccusmngtypecode'] = cusdata.get('ccusmngtypecode')
+                    cusdata_999['account_remark'] = cusdata.get('account_remark')
+                    cusdata_999['ccdefine2'] = cusdata.get('ccdefine2')
+                    cusdata_999['ccusexch_name'] = cusdata.get('ccusexch_name')
+                    cusdata_999['seed_date'] = cusdata.get('seed_date')
+                    for company in ('999', cusdata['a_company']):
+                        tar_data = cusdata_999 if company == '999' else cusdata
+                        cus = env['xlcrm.u8_customer'].sudo().search(
+                            [('review_id', '=', review_id), ('a_company', '=', company)])
+                        if cus:
+                            if cus.status == 0:
+                                self.update('xlcrm.u8_customer', cus.id, tar_data, env)
+                        else:
+                            self.create('xlcrm.u8_customer', tar_data, env)
                 env[model].sudo().browse(review_id).write(data)
             station_model = self.get_model(si_station)
             domain = [('review_id', '=', review_id)]
