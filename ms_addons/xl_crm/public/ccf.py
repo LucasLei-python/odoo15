@@ -247,7 +247,7 @@ class CCF(BaseInfo):
                 error_msg = '付款协议%s没有维护款到发货签核人信息，请联系管理员到系统设置中维护' % protocol_code
                 return manage, lg, fd, fdm, risk, error_msg
             lg = lg if need[0]['lg'] else ''
-            fd, fdm = (fd, fdm) if need[0]['fd'] else ('', '')
+            # fd, fdm = (fd, fdm) if need[0]['fd'] else ('', '')
             if need[0]['riskm']:
                 risk_signer.append(risk_m)
             risk = risk_signer
@@ -258,17 +258,17 @@ class CCF(BaseInfo):
         lg, fd, fdm, risk_m, error_msg = '', '', '', '', ''
         lg_signer = list(filter(lambda x: x['name'] == "LG", special_signer))
         risk_signer_m = list(filter(lambda x: x['name'] == "RISKM", special_signer))
-        fd_signer = list(filter(lambda x: x['name'] == "FD", special_signer))
-        fd_signer_m = list(filter(lambda x: x['name'] == "FDM", special_signer))
-        if lg_signer and risk_signer_m and fd_signer and fd_signer_m:
+        # fd_signer = list(filter(lambda x: x['name'] == "FD", special_signer))
+        # fd_signer_m = list(filter(lambda x: x['name'] == "FDM", special_signer))
+        if lg_signer and risk_signer_m:
             lg_signer = eval(lg_signer[0]['users'])
             risk_signer_m = eval(risk_signer_m[0]['users'])[0]
-            fd_signer = eval(fd_signer[0]['users'])
-            fd_signer_m = eval(fd_signer_m[0]['users'])
+            # fd_signer = eval(fd_signer[0]['users'])
+            # fd_signer_m = eval(fd_signer_m[0]['users'])
         else:
             error_msg = '请联系系统管理员设置法务，财务，风控用户组'
             return lg, fd, fdm, risk_m, error_msg
-        lg, fd, fdm, risk_m = lg_signer, fd_signer, fd_signer_m, risk_signer_m
+        lg,risk_m = lg_signer,risk_signer_m
         return lg, fd, fdm, risk_m, error_msg
 
     def __create_signer(self, review_id, signers, products, pm_inspector_brand_names, env):
@@ -611,37 +611,38 @@ class CCF(BaseInfo):
                     for his in historys:
                         his['review_id'] = review_id
                         self.create('xlcrm.account.cus.his', his, env)
-                cusdata = data.get('cusdata')
-                if cusdata:
-                    cusdata_999 = dict()
-                    company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])],
-                                                                             limit=1)
-                    cusdata['review_id'] = review_id
-                    cusdata['name'] = data['kc_company']
-                    cusdata['abbrname'] = data['ccusabbname']
-                    cusdata['ccusexch_name'] = data['currency']
-                    cusdata['a_company'] = company_code.a_companycode if company_code else ''
-                    cusdata_999['review_id'] = review_id
-                    cusdata_999['name'] = data['kc_company']
-                    cusdata_999['abbrname'] = data['ccusabbname']
-                    cusdata_999['ccusexch_name'] = data['currency']
-                    cusdata_999['a_company'] = '999'
-                    cusdata_999['sort_code'] = cusdata.get('sort_code')
-                    cusdata_999['payment'] = cusdata.get('payment')
-                    cusdata_999['ccusmngtypecode'] = cusdata.get('ccusmngtypecode')
-                    cusdata_999['account_remark'] = cusdata.get('account_remark')
-                    cusdata_999['ccdefine2'] = cusdata.get('ccdefine2')
-                    cusdata_999['ccusexch_name'] = cusdata.get('ccusexch_name')
-                    cusdata_999['seed_date'] = cusdata.get('seed_date')
-                    for company in ('999', cusdata['a_company']):
-                        tar_data = cusdata_999 if company == '999' else cusdata
-                        cus = env['xlcrm.u8_customer'].sudo().search(
-                            [('review_id', '=', review_id), ('a_company', '=', company)])
-                        if cus:
-                            if cus.status == 0:
-                                self.update('xlcrm.u8_customer', cus.id, tar_data, env)
-                        else:
-                            self.create('xlcrm.u8_customer', tar_data, env)
+                self.update_cus(data, review_id, env)
+                # cusdata = data.get('cusdata')
+                # if cusdata:
+                #     cusdata_999 = dict()
+                #     company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])],
+                #                                                              limit=1)
+                #     cusdata['review_id'] = review_id
+                #     cusdata['name'] = data['kc_company']
+                #     cusdata['abbrname'] = data['ccusabbname']
+                #     cusdata['ccusexch_name'] = data['currency']
+                #     cusdata['a_company'] = company_code.a_companycode if company_code else ''
+                #     cusdata_999['review_id'] = review_id
+                #     cusdata_999['name'] = data['kc_company']
+                #     cusdata_999['abbrname'] = data['ccusabbname']
+                #     cusdata_999['ccusexch_name'] = data['currency']
+                #     cusdata_999['a_company'] = '999'
+                #     cusdata_999['sort_code'] = cusdata.get('sort_code')
+                #     cusdata_999['payment'] = cusdata.get('payment')
+                #     cusdata_999['ccusmngtypecode'] = cusdata.get('ccusmngtypecode')
+                #     cusdata_999['account_remark'] = cusdata.get('account_remark')
+                #     cusdata_999['ccdefine2'] = cusdata.get('ccdefine2')
+                #     cusdata_999['ccusexch_name'] = cusdata.get('ccusexch_name')
+                #     cusdata_999['seed_date'] = cusdata.get('seed_date')
+                #     for company in ('999', cusdata['a_company']):
+                #         tar_data = cusdata_999 if company == '999' else cusdata
+                #         cus = env['xlcrm.u8_customer'].sudo().search(
+                #             [('review_id', '=', review_id), ('a_company', '=', company)])
+                #         if cus:
+                #             if cus.status == 0:
+                #                 self.update('xlcrm.u8_customer', cus.id, tar_data, env)
+                #         else:
+                #             self.create('xlcrm.u8_customer', tar_data, env)
                 env[model].sudo().browse(review_id).write(data)
             station_model = self.get_model(si_station)
             domain = [('review_id', '=', review_id)]
@@ -986,7 +987,7 @@ class CCF(BaseInfo):
                 current_account_period = eval(r['current_account_period'])
             r['current_account_period'] = current_account_period
             if r['cs']:
-                cs_ = self.get_cs_new(r['id'],env)
+                cs_ = self.get_cs_new(r['id'], env)
                 r['registered_captial'] = cs_['registered_capital'] + cs_[
                     'registered_capital_currency']
                 r['paid_capital'] = cs_['paid_capital'] + cs_['paid_capital_currency']
@@ -1003,13 +1004,13 @@ class CCF(BaseInfo):
                     r['insured_persons'] = res_customer['insured_persons']
             res_fdm = env['xlcrm.account.fd'].sudo().search_read(
                 [('review_id', '=', r['id']), ('station_no', '=', 36)])
-            r['factoring']=''
+            r['factoring'] = ''
             if res_fdm:
                 res_fdm = res_fdm[0]
                 r['factoring'] = res_fdm['factoring_limit'] if res_fdm['factoring'] == '有' else res_fdm[
                     'factoring']
             res_lg = env['xlcrm.account.lg'].sudo().search_read([('review_id', '=', r['id'])])
-            r['consignee']=''
+            r['consignee'] = ''
             if res_lg:
                 res_lg = res_lg[0]
                 r['consignee'] = res_lg['consignee']
@@ -1024,7 +1025,7 @@ class CCF(BaseInfo):
                         profit += eval(res_['material_profit'])
 
             r['brand_profit'] = profit
-            r['others']=''
+            r['others'] = ''
             res_csvp = env['xlcrm.account.csvp'].sudo().search_read([('review_id', '=', r['id'])])
             if res_csvp:
                 res_csvp = res_csvp[0]
@@ -1084,7 +1085,8 @@ class CCF(BaseInfo):
 
         return res_
 
-    def get_cs_new(self, review_id, env):
+    @staticmethod
+    def get_cs_new(review_id, env):
         res_ = dict()
         res_customer = env['xlcrm.account.cus'].sudo().search_read(
             [('review_id', '=', review_id)])
@@ -1123,6 +1125,45 @@ class CCF(BaseInfo):
                 tmp['payment_currency'] = _his['payment_currency'] if _his['payment_currency'] else ''
                 his.append(tmp)
             res_['historys'] = his
+        return res_
+
+    def get_cus_data(self, review_id, env):
+        res_ = dict()
+        res_cus = env['xlcrm.u8_customer'].sudo().search([('review_id', '=', review_id), ('a_company', '!=', '999')])
+        if res_cus:
+            res_['super_dept'] = res_cus.super_dept
+            res_['sort_code'] = res_cus.sort_code
+            res_['a_company'] = res_cus.a_company
+            res_['ccussscode'] = res_cus.ccussscode
+            res_['ccusmngtypecode'] = res_cus.ccusmngtypecode
+            res_['account_remark'] = res_cus.account_remark
+            res_['ccdefine2'] = res_cus.ccdefine2
+            res_['ccusexch_name'] = res_cus.ccusexch_name
+            res_['spec_operator'] = res_cus.spec_operator
+            res_['phone'] = res_cus.phone
+            res_['contact'] = res_cus.contact
+            res_['mobile'] = res_cus.mobile
+            res_['email'] = res_cus.email
+            res_['credit_rank'] = res_cus.credit_rank
+            res_['credit_amount'] = res_cus.credit_amount
+            res_['credit'] = res_cus.credit
+            res_['creditdate'] = res_cus.creditdate
+            authdimen = env['xlcrm.u8_customer_authdimen'].sudo().search_read([('cus', '=', res_cus.id)],
+                                                                              fields=['cadcode', 'cadname'])
+            res_['authdimen'] = list(map(lambda x: f"{x['cadcode']}-{x['cadname']}", authdimen)) if authdimen else []
+            bank = env['xlcrm.u8_customer_bank'].sudo().search_read([('cus', '=', res_cus.id)],
+                                                                    fields=['cbank', 'cbranch', 'caccountnum',
+                                                                            'caccountname', 'bdefault'])
+            res_['bank'] = bank if bank else []
+            deliver_add = env['xlcrm.u8_customer_deliver_add'].sudo().search_read([('cus', '=', res_cus.id)],
+                                                                                  fields=['caddcode', 'cenglishadd2',
+                                                                                          'cenglishadd3',
+                                                                                          'cenglishadd4',
+                                                                                          'cdeliveradd', 'bdefault',
+                                                                                          'cdeliverunit',
+                                                                                          'clinkname',
+                                                                                          'clinkperson'])
+            res_['deliver_add'] = deliver_add if deliver_add else []
         return res_
 
     def get_si_station(self, station_no, review_id, env):
@@ -1204,6 +1245,7 @@ class CCF(BaseInfo):
             "kc_company": obj_temp["kc_company"],
             "ccusabbname": obj_temp["ccusabbname"],
             "ccuscode": obj_temp["ccuscode"] if obj_temp["ccuscode"] else '',
+            "ccusmnemcode": obj_temp["ccusmnemcode"] if obj_temp["ccusmnemcode"] else '',
             "ke_company": obj_temp["ke_company"],
             "kw_address": obj_temp["kw_address"],
             "registered_address": obj_temp["registered_address"],
@@ -1253,7 +1295,7 @@ class CCF(BaseInfo):
             'credit_limit_now': obj_temp['credit_limit_now'] if obj_temp[
                 'credit_limit_now'] else '',
             'current_account_period': kwargs['current_account_period'],
-            'cusdata': kwargs['cusdata'],
+            'cusdata': obj_temp['cusdata'],
             'protocol_code': obj_temp['protocol_code'] if obj_temp[
                 'protocol_code'] else '',
             'protocol_detail': obj_temp['protocol_detail'] if obj_temp[
@@ -1280,6 +1322,7 @@ class CCF(BaseInfo):
             'wire_apply_days': obj_temp['wire_apply_days'],
             'days_apply_type': obj_temp['days_apply_type'],
             'days_apply_days': obj_temp['days_apply_days'],
+            'u8_payment': obj_temp['u8_payment'],
             'payment_method_apply_new': obj_temp['payment_method_apply_new']
         }
         return ret_temp
@@ -1486,7 +1529,7 @@ class CCF(BaseInfo):
                     mssql.in_up_de(
                         "insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
                         f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
-                    if pm_res.compliance_material == '是':
+                    if p_res.compliance_material == '是':
                         material = env['xlcrm.material.profit'].sudo().search_read(
                             [('pm_id', '=', p_res.id), ('compliance', '=', '是')], fields=['material', 'init_time'])
                         for item in material:
@@ -1511,3 +1554,66 @@ class CCF(BaseInfo):
                              data]])
                     mssql.commit()
                     mssql.close()
+
+    def update_cus(self, data, review_id, env):
+        import copy
+        cus_res = env['xlcrm.u8_customer'].sudo().search([('review_id', '=', review_id)])
+        if cus_res:
+            cus_res.unlink()
+            env['xlcrm.u8_customer_authdimen'].sudo().search([('review_id', '=', review_id)]).unlink()
+            env['xlcrm.u8_customer_bank'].sudo().search([('review_id', '=', review_id)]).unlink()
+            env['xlcrm.u8_customer_deliver_add'].sudo().search([('review_id', '=', review_id)]).unlink()
+            env.cr.commit()
+        if data.get('cusdata'):
+            cus = data.get('cusdata')
+            company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])], limit=1)
+            cus['review_id'], cus['a_company'] = review_id, company_code.a_companycode if company_code else ''
+            cus['code'] = data['ccuscode']
+            cus['name'] = data['kc_company']
+            cus['abbrname'] = data['ccusabbname']
+            cus['ccusexch_name'] = data['currency']
+            cus['ccussaprotocol'] = data['protocol_code']
+            cus['ccusmnemcode'] = data.get('ccusmnemcode')
+            cus['payment'] = self.get_payment(data)
+            cus[
+                'credit_amount'] = f"{float(data['credit_limit']) * 10000 if data['unit'] == '万' and data['credit_limit'] else data['credit_limit']}"
+            authdimen = cus.pop('authdimen', [])
+            deliver_add = cus.pop('deliver_add', [])
+            bank = cus.pop('bank', '')
+            cus_id = env['xlcrm.u8_customer'].sudo().create(cus)
+            cus_999 = copy.deepcopy(cus)
+            cus_999['a_company'] = '999'
+            env['xlcrm.u8_customer'].sudo().create(cus_999)
+            if authdimen:
+                auth_data = []
+                for auth in authdimen:
+                    tmp = dict()
+                    tmp['cus'] = cus_id.id
+                    tmp['review_id'] = review_id
+                    tmp['cadcode'], tmp['cadname'] = auth.split('-')
+                    auth_data.append(tmp)
+                env['xlcrm.u8_customer_authdimen'].sudo().create(auth_data)
+            if deliver_add:
+                for address in deliver_add:
+                    address['review_id'] = review_id
+                    address['cus'] = cus_id.id
+                env['xlcrm.u8_customer_deliver_add'].sudo().create(deliver_add)
+            if bank:
+                for bk in bank:
+                    bk['review_id'] = review_id
+                    bk['cus'] = cus_id.id
+                env['xlcrm.u8_customer_bank'].sudo().create(bank)
+
+    @staticmethod
+    def get_payment(_res):
+        payment = _res.get("payment_method_apply_new","").replace('amp;', '&').replace('eq;', '='). \
+            replace('plus;', '+').replace('per;', '%')
+        if payment == '电汇':
+            payment = f"{_res['wire_apply_per']}%{_res['wire_apply_type']}{_res['wire_apply_days']}天"
+        elif payment == '天数':
+            payment = _res['days_apply_type'] + str(_res['days_apply_days']) + '天'
+        elif payment == '其他':
+            payment = _res['others_apply']
+        elif payment == 'U8支付方式':
+            payment = _res['u8_payment']
+        return payment

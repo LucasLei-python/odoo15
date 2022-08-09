@@ -8476,7 +8476,7 @@ class XlCrm(http.Controller, Base):
             return no_token()
         try:
             from ..public import connect_mssql
-            sql = "select cCusCode,cCusName,cCusType,cCusAbbName from v_Customer_CCF"
+            sql = "select cCusCode,cCusName,cCusType,cCusAbbName,companycode from v_Customer_CCF"
             mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
             for res in res_sql:
@@ -8485,6 +8485,7 @@ class XlCrm(http.Controller, Base):
                 tmp['cCusName'] = res[1]
                 tmp['cCusType'] = self.translation(res[2])
                 tmp['cCusAbbName'] = res[3]
+                tmp['companycode'] = res[4]
                 result.append(tmp)
             message = "success"
         except Exception as e:
@@ -8527,7 +8528,7 @@ class XlCrm(http.Controller, Base):
         '/api/v11/getDepartment'
     ], auth='none', type='http', csrf=False, methods=['GET'])
     def getDepartment(self, model=None, ids=None, **kw):
-        success, message, deptname = True, '', ''
+        success, message, dept_name,super_dept,spec_operator = True, '', '','',''
         token = kw.pop('token')
         # token = token if token else get_token(1).pop('token').pop('token')
         env = authenticate(token)
@@ -8537,15 +8538,16 @@ class XlCrm(http.Controller, Base):
             username = kw.get('username')
             from ..public import connect_mssql
             sql = "select 七级部门名称,六级部门名称,五级部门名称,四级部门名称,三级部门名称,二级部门名称," \
-                  "一级部门名称 from v_hr_hi_person where 人员姓名='%s'" % username
+                  "一级部门名称,部门编号,人员编号 from v_hr_hi_person where 人员姓名='%s'" % username
             mysql = connect_mssql.Mssql('ErpCrmDB')
             res_sql = mysql.query(sql)
-            deptname = ''
             if res_sql:
                 res = res_sql[0]
+                super_dept = res[7]
+                spec_operator = res[8]
                 for de in res:
                     if de:
-                        deptname = de
+                        dept_name = de
                         break
             message = "success"
         except Exception as e:
@@ -8553,7 +8555,7 @@ class XlCrm(http.Controller, Base):
         finally:
             env.cr.close()
 
-        rp = {'status': 200, 'message': message, 'deptname': deptname}
+        rp = {'status': 200, 'message': message, 'deptname': dept_name,'super_dept':super_dept,'spec_operator':spec_operator}
         return json_response(rp)
 
     @http.route([

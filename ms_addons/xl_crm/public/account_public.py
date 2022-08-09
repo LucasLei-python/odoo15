@@ -163,7 +163,7 @@ class Stations:
         return dict(filter(lambda x: x[0] <= station_no, dict_tar.items()))
 
     def getnextstation(self, current_no):
-        dict_next = {1: 5, 5: 10, 10: 15,15:16, 16: 20, 20: 21, 21: 25, 25: 30, 30: 35, 35: 36, 36: 40, 40: 45, 45: 46,
+        dict_next = {1: 5, 5: 10, 10: 15,15:16, 16: 20, 20: 21, 21: 25, 25: 30, 30: 40, 40: 45, 45: 46,
                      46: 50,
                      50: 55,
                      55: 99}

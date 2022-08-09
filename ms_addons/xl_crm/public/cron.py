@@ -1,6 +1,20 @@
 from . import send_email, connect_mssql
-import odoo
+import odoo, json
 from odoo import modules
+
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        from datetime import date, datetime
+        from decimal import Decimal
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        elif isinstance(obj, Decimal):
+            return float(obj)
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 class Aps:
@@ -176,23 +190,17 @@ class Aps:
                     material = item.get('material').replace('amp;', '&').replace(
                         'eq;', '=').replace('plus;', '+').replace('per;', '%')
                     sheet.write(main_start, 15, material, style)
-                    # sheet.col(15).width = self.len_byte(material)
                     profit = f'{item.get("profit")}%' if item.get('profit', "") else ''
                     sheet.write(main_start, 16, profit, style)
-                    # sheet.col(16).width = self.len_byte(profit)
                     sheet.write(main_start, 17, period[index].get('kc_company', ""), style)
-                    # sheet.col(17).width = self.len_byte(period[index].get('kc_company', ""))
-                    sheet.write(main_start, 18, period[index].get('release_time', ""), style)
-                    # sheet.col(18).width = self.len_byte(period[index].get('release_time', ""))
-                    sheet.write(main_start, 19, period[index].get('payment_method', ""), style)
-                    # sheet.col(19).width = self.len_byte(period[index].get('payment_method', ""))
+                    sheet.write(main_start, 18, period[index].get('release_time', "").replace('amp;', '&').replace(
+                        'eq;', '=').replace('plus;', '+').replace('per;', '%'), style)
+                    sheet.write(main_start, 19, period[index].get('payment_method', "").replace('amp;', '&').replace(
+                        'eq;', '=').replace('plus;', '+').replace('per;', '%'), style)
                     sheet.write(main_start, 20,
                                 f'{period[index].get("credit_limit_now", "")}{period[index].get("credit_limit_now_currency", "")}',
                                 style)
-                    # sheet.col(20).width = self.len_byte(
-                    #     f'{period[index].get("credit_limit_now", "")}{period[index].get("credit_limit_now_currency", "")}')
                     sheet.write(main_start, 21, period[index].get('transaction_status', ""), style)
-                    # sheet.col(21).width = self.len_byte(period[index].get('transaction_status', ""))
                     main_start += 1
 
             # file_path = modules.module.get_module_resource('xl_crm') + '/static/test.xls'
@@ -201,26 +209,68 @@ class Aps:
         except Exception as e:
             print(e)
 
-    @staticmethod
-    def synchronization_cus(res):
+    def synchronization_cus(self, res, env):
         try:
             import requests, json
             from .u8_login_user import U8User
             desc = {'ok': False, 'msg': ''}
             headers = {'Content-Type': 'application/json; charset=utf-8'}
             u8user = U8User()
-            login_data, login_url, add_url = u8user.product(res.a_company) if odoo.tools.config[
-                                                                                  "enviroment"] == 'PRODUCT' else u8user.test(
-                res.a_company)
+            login_data, login_url, url = u8user.product(res.a_company, res.code) if odoo.tools.config[
+                                                                                        "enviroment"] == 'PRODUCT' else u8user.test(
+                res.a_company, res.code)
             login = requests.post(login_url, json.dumps(login_data),
                                   headers=headers)
             if login.ok:
                 headers['apiToken'] = json.loads(login.text)
+                cusdeliveradd = env['xlcrm.u8_customer_deliver_add'].sudo().search_read(
+                    [('review_id', '=', res.review_id.id)],
+                    fields=['caddcode',
+                            'cdeliveradd',
+                            'cenglishadd2',
+                            'cenglishadd3',
+                            'cenglishadd4',
+                            'clinkperson',
+                            'cdeliverunit',
+                            'bdefault'])
+                auth_res = env['xlcrm.u8_customer_authdimen'].sudo().search_read([('review_id', '=', res.review_id.id)])
+                auth_data = list()
+                auth_data.append({
+                    "account_id": res.code,
+                    "privilege_type": "0",
+                    "privilege_id": res.super_dept
+                })
+                if res.a_company != '999' and auth_res:
+                    for auth in auth_res:
+                        tmp = dict()
+                        tmp["account_id"] = res.code
+                        tmp["privilege_type"] = "5"
+                        tmp["privilege_id"] = auth["cadcode"]
+                        auth_data.append(tmp)
+
+                for address in cusdeliveradd:
+                    address.pop('id')
+                    address['ccuscode'] = res['code']
                 data = {
                     "customer": {
                         "code": res['code'],
                         "name": res['name'],
                         "abbrname": res['abbrname'],
+                        "super_dept": res['super_dept'],
+                        "spec_operator": res['spec_operator'],
+                        "phone": res["phone"],
+                        "contact": res['contact'],
+                        "mobile": res['mobile'],
+                        "email": res['email'],
+                        "ccuscreditcompany": res['code'],
+                        "credit_rank": res['credit_rank'],
+                        "credit_amount": res['credit_amount'],
+                        "Credit": res['credit'],
+                        "CreditDate": res['creditdate'],
+                        "ccussaprotocol": res['ccussaprotocol'],
+                        "devliver_site": {
+                            "cusdeliveradd": cusdeliveradd
+                        },
                         "sort_code": res['sort_code'],
                         "self_define9": res['payment'].replace('amp;', '&').replace('eq;', '=').replace('plus;',
                                                                                                         '+').replace(
@@ -233,14 +283,29 @@ class Aps:
                         "ccdefine10": res['payment'].replace('amp;', '&').replace('eq;', '=').replace('plus;',
                                                                                                       '+').replace(
                             'per;', '%'),
+                        "ccussscode": res["ccussscode"].split('-')[0],
                         "ccusexch_name": res['ccusexch_name'],
-                        "seed_date": res['seed_date'],
+                        "seed_date": res.review_id.update_time,
+                        "InvoiceCompany": res.code,
+                        "cCusMnemCode": res.ccusmnemcode,
+                        "customer_authall": {
+                            "customer_auth": auth_data
+                        }
                     }
                 }
-                cus = requests.post(add_url, data=json.dumps(data),
+                # 更新支付方式
+                self.update_cus_payment(res)
+                cus = requests.post(url, json.dumps(data, ensure_ascii=False, cls=MyEncoder).encode("utf-8"),
                                     headers=headers)
                 resp = json.loads(cus.text)
                 if resp['item']["@dsc"] == 'ok':
+
+                    bank_data = env['xlcrm.u8_customer_bank'].sudo().search_read([('review_id', '=', res.review_id.id)],
+                                                                                 fields=['cbank', 'cbranch',
+                                                                                         'caccountnum', 'caccountname',
+                                                                                         'bdefault'])
+
+                    self.update_cus_bank(res, bank_data)
                     desc['ok'] = True
                     desc['msg'] = resp['item']['@u8key']
                 else:
@@ -253,6 +318,54 @@ class Aps:
             return desc
 
     @staticmethod
+    def update_cus_bank(res, bank_data):
+        desc = dict()
+        from .public import u8_account_name
+        try:
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            query_bank = list(
+                map(lambda item: (
+                    res.code, item["cbank"], item["cbranch"], item["caccountname"], item["caccountnum"],
+                    item["bdefault"]), bank_data))
+            if res.category == 'edit':
+                mssql.in_up_de(
+                    f"delete from {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.CustomerBank where cCusCode='{res.code}'")
+
+            mssql.batch_in_up_de(
+                [[
+                    f'insert into {u8_account_name(res.a_company, odoo.tools.config["enviroment"])}.dbo.CustomerBank(cCusCode,cBank,cBranch,cAccountName,cAccountNum,bDefault)values(%s,%s,%s,%s,%s,%s)',
+                    query_bank]])
+
+            mssql.commit()
+            mssql.close()
+            desc['msg'] = 'ok'
+        except Exception as e:
+            desc['msg'] = e
+        finally:
+            return desc
+
+    @staticmethod
+    def update_cus_payment(res):
+        desc = dict()
+        from .public import u8_account_name
+        try:
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            payment = res.payment.replace('amp;', '&').replace('eq;', '=').replace('plus;', '+').replace('per;', '%')
+            mssql.in_up_de(
+                f"insert into {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.UserDefine(cID,cValue)values('70','{payment}')")
+            mssql.commit()
+            mssql.close()
+            desc['msg'] = 'ok'
+        except Exception as e:
+            pass
+
+    @staticmethod
     def synchronization_cus_mcode(res):
         desc = dict()
         from .public import u8_account_name
@@ -263,9 +376,12 @@ class Aps:
             mssql = connect_mssql.Mssql(con_str)
             count = set(map(lambda x: x.a_company, res))
             for _c in count:
-                query_data = list(map(lambda item: (item.ccusmnemcode, item.code), filter(lambda x: x.a_company == _c, res)))
+                query_data = list(
+                    map(lambda item: (item.ccusmnemcode, item.code), filter(lambda x: x.a_company == _c, res)))
                 mssql.batch_in_up_de(
-                    [[f'update {u8_account_name(_c,odoo.tools.config["enviroment"])}.dbo.Customer set ccusmnemcode=%s where cCusCode=%s', query_data]])
+                    [[
+                        f'update {u8_account_name(_c, odoo.tools.config["enviroment"])}.dbo.Customer set ccusmnemcode=%s where cCusCode=%s',
+                        query_data]])
             mssql.commit()
             mssql.close()
             desc['msg'] = 'ok'

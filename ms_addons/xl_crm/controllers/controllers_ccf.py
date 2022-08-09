@@ -56,6 +56,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
             for item in data['affiliates']:
                 item['account'] = review_id
                 self.create('xlcrm.account.affiliates', item, env)
+
             env['xlcrm.account.cus'].sudo().search([('review_id', '=', review_id)]).unlink()
             env['xlcrm.account.cus.his'].sudo().search([('review_id', '=', review_id)]).unlink()
             cs, historys = data['cs'], data['cs']['historys']
@@ -65,38 +66,6 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 for his in historys:
                     his['review_id'] = review_id
                     self.create('xlcrm.account.cus.his', his, env)
-            cusdata = data.get('cusdata')
-            if cusdata:
-                cusdata_999 = dict()
-                company_code = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', data['a_company'])],
-                                                                         limit=1)
-                cusdata['review_id'] = review_id
-                cusdata['name'] = data['kc_company']
-                cusdata['abbrname'] = data['ccusabbname']
-                cusdata['ccusexch_name'] = data['currency']
-                cusdata['a_company'] = company_code.a_companycode if company_code else ''
-                cusdata_999['review_id'] = review_id
-                cusdata_999['name'] = data['kc_company']
-                cusdata_999['abbrname'] = data['ccusabbname']
-                cusdata_999['ccusexch_name'] = data['currency']
-                cusdata_999['a_company'] = '999'
-                cusdata_999['sort_code'] = cusdata.get('sort_code')
-                cusdata_999['payment'] = cusdata.get('payment')
-                cusdata_999['ccusmngtypecode'] = cusdata.get('ccusmngtypecode')
-                cusdata_999['account_remark'] = cusdata.get('account_remark')
-                cusdata_999['ccdefine2'] = cusdata.get('ccdefine2')
-                cusdata_999['ccusexch_name'] = cusdata.get('ccusexch_name')
-                cusdata_999['seed_date'] = cusdata.get('seed_date')
-                for company in ('999', cusdata['a_company']):
-                    tar_data = cusdata_999 if company == '999' else cusdata
-                    cus = env['xlcrm.u8_customer'].sudo().search(
-                        [('review_id', '=', review_id), ('a_company', '=', company)])
-                    if cus:
-                        if cus.status == 0:
-                            self.update('xlcrm.u8_customer', cus.id, tar_data, env)
-                    else:
-                        self.create('xlcrm.u8_customer', tar_data, env)
-                    # env.cr.commit()
             env[model].sudo().browse(review_id).write({"account_attend_user_ids": data['account_attend_user_ids']})
             result_object = env[model].sudo().search_read([('id', '=', review_id)])
             # 更新documents
@@ -114,6 +83,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     self.send_email(result_object['signer'].split(',')[1], review_id, env)
                     self.send_wechat(result_object['signer'].split(',')[1], review_id, env)
 
+            self.update_cus(data, review_id, env)
             env.cr.commit()
             success = True
             message = "success"
@@ -186,7 +156,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 result['type'] = 'set'
                 if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'PRODUCT':
                     self.insert_brandnamed_toU8(result)
-                    self.insert_brandlimit_toU8(review_id, env)
+                    # self.insert_brandlimit_toU8(review_id, env)
                 si_ = str(env.uid)
                 if result['signer'] and si_ in result['signer'].split(','):
                     result['status_id'] = 0
@@ -251,18 +221,9 @@ class XlCrmCCF(http.Controller, Base, CCF):
         env = self.authenticate(token)
         if not env:
             return self.no_token()
-        domain, domain_c = [], []
-        if kw.get("customer"):
-            customer = self.literal_eval(kw.get("customer"))
-            domain_base = [('status_id', '>', 1)]
-            domain = [('kc_company', '=', customer.get("kc_company")), ('a_company', '=', customer.get("a_company")),
-                      ]
-            domain_c = [('kc_company', '=', customer.get("kc_company"))]
+        if kw.get("id"):
             try:
-                result = env[model].sudo().search_read(domain + domain_base, order='init_time desc', limit=1)
-                if not result:
-                    result = env[model].sudo().search_read(domain_c + domain_base, order='init_time desc',
-                                                           limit=1)
+                result = env[model].sudo().search_read([('id', '=', kw.get("id"))])
                 if result:
                     obj_temp = result[0]
                     model_fields = env[model].fields_get()
@@ -340,7 +301,10 @@ class XlCrmCCF(http.Controller, Base, CCF):
                         'current_account_period': current_account_period,
                         'cs': obj_temp['cs'],
                         'affiliates': eval(obj_temp['affiliates']) if obj_temp['affiliates'] else [],
-                        'protocol_code': obj_temp['protocol_code']
+                        'protocol_code': obj_temp['protocol_code'],
+                        'end_recive_date': obj_temp['end_recive_date'],
+                        'end_date': obj_temp['end_date'],
+                        'latest_receipt_date': obj_temp['latest_receipt_date'],
                     }
                 message = "success"
             except Exception as e:
@@ -349,6 +313,74 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 env.cr.close()
 
         rp = {'status': 200, 'message': message, 'data': ret_temp}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/getAccountExistCustomer/<string:model>'
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_account_exists_customer(self, model=None, ids=None, **kw):
+        success, message, result, ret_temp, count, offset, limit = True, '', '', {}, 0, 0, 25
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        domain, domain_c = [], []
+        if kw.get("customer"):
+            customer = self.literal_eval(kw.get("customer"))
+            domain_base = [('status_id', '>', 1)]
+            domain = [('kc_company', '=', customer.get("kc_company")), ('a_company', '=', customer.get("a_company")),
+                      ]
+            domain_c = [('kc_company', '=', customer.get("kc_company"))]
+            try:
+                result = env[model].sudo().search_read(domain + domain_base, order='init_time desc', limit=1)
+                if not result:
+                    result = env[model].sudo().search_read(domain_c + domain_base, order='init_time desc',
+                                                           limit=1)
+                if result:
+                    obj_temp = result[0]
+                    ret_temp = {
+                        "id": obj_temp["id"],
+                        "a_company": obj_temp["a_company"]
+                    }
+                message = "success"
+            except Exception as e:
+                result, success, message = '', False, str(e)
+            finally:
+                env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': ret_temp}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/getAccountListByCustomer/<string:model>'
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_account_customer_list(self, model=None, ids=None, **kw):
+        success, message, result, data, count, offset, limit = True, '', '', [], 0, 0, 25
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        if kw.get("customer"):
+            customer = self.literal_eval(kw.get("customer"))
+            domain = [('status_id', '>', 1), ('kc_company', '=', customer.get("kc_company"))]
+            try:
+                result = env[model].sudo().search(domain, order='update_time desc')
+                for res in result:
+                    ret_temp = {
+                        "id": res.id,
+                        "a_company": res.a_company,
+                        "station_desc": res.station_desc,
+                        "update_time": res.update_time,
+                        "init_usernickname": res.init_usernickname
+                    }
+                    data.append(ret_temp)
+                message = "success"
+            except Exception as e:
+                result, success, message = '', False, str(e)
+            finally:
+                env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': data}
         return self.json_response(rp)
 
     @http.route([
@@ -368,20 +400,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 result, ret = env[model].sudo().search_read(domain), {}
                 if result:
                     obj_temp = result[0]
-                    # if obj_temp['cs']:
-                    #     obj_temp['cs'] = eval(obj_temp['cs'])
-                    #     obj_temp['cs']['remark'] = obj_temp['cs']['remark'] if obj_temp['cs'].get('remark') else ''
-                    #     obj_temp['cs']['trade_terms'] = obj_temp['cs']['trade_terms'] if obj_temp['cs'].get(
-                    #         'trade_terms') else ''
-                    # else:
-                    #     obj_temp['cs'] = self.get_cs(review_id, env)
-                    # if not obj_temp['cs'].get('historys'):
-                    #     obj_temp['cs']['historys'] = [{'payment_account': obj_temp['cs'].get('payment_account'),
-                    #                                    'payment_currency': obj_temp['cs'].get('payment_currency'),
-                    #                                    'salesment_account': obj_temp['cs'].get('salesment_account'),
-                    #                                    'salesment_currency': obj_temp['cs'].get('salesment_currency'),
-                    #                                    }]
                     obj_temp['cs'] = self.get_cs_new(review_id, env)
+                    obj_temp['cusdata'] = self.get_cus_data(review_id, env)
                     si_station = self.get_si_station(obj_temp['station_no'], review_id, env)
                     products = self.literal_eval(obj_temp['products']) if obj_temp['products'] else []
                     products_sign = self.get_products_sign(products, si_station, obj_temp['init_user'][0], env)
@@ -402,12 +422,6 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     company_res = env['xlcrm.user.ccfnotice'].sudo().search_read(
                         [('a_company', '=', obj_temp['a_company'])])
                     ret['companycode'] = company_res[0]['a_companycode'] if company_res else ''
-                    cusdata = env['xlcrm.u8_customer'].sudo().search_read(
-                        [('review_id', '=', review_id), ('a_company', '!=', '999')],
-                        fields=['sort_code', 'payment',
-                                'ccusmngtypecode', 'account_remark',
-                                'ccdefine2', 'seed_date'])
-                    ret['cusdata'] = cusdata[0] if cusdata else {}
                     ret_temp = self.get_detail_by_id(obj_temp, env, **ret)
                 message = "success"
             except Exception as e:
@@ -978,6 +992,33 @@ class XlCrmCCF(http.Controller, Base, CCF):
             return self.json_response(
                 {'status': 200, 'success': success, 'message': message, 'data': data})
 
+    @http.route(['/api/v11/getSettlementFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_settlement(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            a_company = kw.get('companycode')
+            from ..public import connect_mssql, public
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            sql = f"select cSSCode,cSSName from {public.u8_account_name(a_company, odoo.tools.config['enviroment'])}.dbo.SettleStyle where bSSEnd='1'"
+            res = mssql.query(sql)
+            for _res in res:
+                _tmp = dict()
+                _tmp['ccussscode'] = _res[0]
+                _tmp['ccusssname'] = _res[1]
+                data.append(_tmp)
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
     @http.route(['/api/v11/getAccountRemarkListFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
     def get_u8_account_remark(self, model=None, ids=None, **kw):
         success, message, data = True, '', []
@@ -1024,6 +1065,59 @@ class XlCrmCCF(http.Controller, Base, CCF):
             return self.json_response(
                 {'status': 200, 'success': success, 'message': message, 'data': data})
 
+    @http.route(['/api/v11/getAuthDimenFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_auth_dimen(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            a_company = kw.get('companycode')
+            from ..public import connect_mssql, public
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            sql = f"select cadcode,cadname from {public.u8_account_name(a_company, odoo.tools.config['enviroment'])}.dbo.AA_AuthDimen_Sub "
+            res = mssql.query(sql)
+            for _res in res:
+                _tmp = dict()
+                _tmp['cadcode'] = _res[0]
+                _tmp['cadname'] = _res[1]
+                data.append(_tmp)
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getBankFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_bank(self, model=None, ids=None, **kw):
+        success, message, data = True, '', []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            from ..public import connect_mssql
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            sql = f"select cbankcode,cbankname from dbo.AA_Bank "
+            res = mssql.query(sql)
+            for _res in res:
+                _tmp = dict()
+                _tmp['cbankcode'] = _res[0]
+                _tmp['cbankname'] = _res[1]
+                data.append(_tmp)
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
     @http.route(['/api/v11/getCustomerClassFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
     def get_u8_customerclass(self, model=None, ids=None, **kw):
         success, message, data = True, '', []
@@ -1040,6 +1134,103 @@ class XlCrmCCF(http.Controller, Base, CCF):
             res = mssql.query('select cCCCode,cCCName from CustomerClass where iCCGrade=4')
             for _res in res:
                 data.append({'value': _res[0], 'label': _res[1]})
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getCusDetailFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_u8_customer_detail(self, model=None, ids=None, **kw):
+        success, message, data, authdimen, deliver_add, bank = True, '', dict(), [], [], []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            a_company = kw.get('companycode')
+            cuscode = kw.get('cuscode')
+            from ..public import connect_mssql, public
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            database = public.u8_account_name(a_company, odoo.tools.config['enviroment'])
+            sql_cus = f"select cCusMnemCode,cCusPhone,cCusPerson,cCusHand,cCusEmail,cCusCreGrade,cCCCode,bCredit,bCreditDate" \
+                      f",cCusDefine4,b.ccdefine2,cCusDefine9,iCusCreLine,c.cSSCode+'-'+c.cSSName as ccussscode from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
+                      f" left join {database}.dbo.SettleStyle c on a.ccussscode=c.cSSCode where a.cCusCode='{cuscode}' "
+            res_cus = mssql.query(sql_cus)
+            sql_dimen = f"select b.cADCode+'-'+b.cADName as dimen from {database}.dbo.Customer_Auth a left join {database}.dbo.AA_AuthDimen_Sub b on a.Privilege_ID=b.cADCode " \
+                        f"where a.Account_ID='{cuscode}' and a.Privilege_Type='5'"
+            res_dimen = mssql.query(sql_dimen)
+            if res_dimen:
+                authdimen = list(map(lambda x: x[0], res_dimen))
+            sql_address = f"select cAddCode,cDeliverAdd,cEnglishAdd2,cEnglishAdd3,cEnglishAdd4,bDefault,cLinkPerson,cDeliverUnit from {database}.dbo.cusdeliveradd where cCusCode='{cuscode}'"
+            res_address = mssql.query(sql_address)
+            if res_address:
+                deliver_add = list(map(lambda x: {
+                    "caddcode": x[0],
+                    "cdeliveradd": x[1],
+                    "cenglishadd2": x[2],
+                    "cenglishadd3": x[3],
+                    "cenglishadd4": x[4],
+                    "bdefault": '1' if x[5] else '0',
+                    "clinkperson": x[6],
+                    "cdeliverunit": x[7]
+                }, res_address))
+            sql_bank = f"select cBank,cBranch,cAccountNum,cAccountName,bDefault from {database}.dbo.CustomerBank where cCusCode='{cuscode}'"
+            res_bank = mssql.query(sql_bank)
+            if res_bank:
+                bank = list(map(lambda x: {
+                    "cbank": x[0],
+                    "cbranch": x[1],
+                    "caccountnum": x[2],
+                    "caccountname": x[3],
+                    "bdefault": '1' if x[4] else '0'}, res_bank))
+            data = {
+                'ccusmnemcode': res_cus[0][0],
+                'phone': res_cus[0][1],
+                'contact': res_cus[0][2],
+                'mobile': res_cus[0][3],
+                'email': res_cus[0][4],
+                'credit_rank': res_cus[0][5],
+                'sort_code': res_cus[0][6],
+                # 'credit': '1' if res_cus[0][7] else '0',
+                # 'creditdate': '1' if res_cus[0][8] else '0',
+                'account_remark': res_cus[0][9],
+                'ccdefine2': res_cus[0][10],
+                'payment': res_cus[0][11],
+                'credit_limit': res_cus[0][12] / 10000 if res_cus[0][12] else 0,
+                'ccussscode': res_cus[0][13],
+                'authdimen': authdimen,
+                'deliver_add': deliver_add,
+                'bank': bank
+            }
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            return self.json_response(
+                {'status': 200, 'success': success, 'message': message, 'data': data})
+
+    @http.route(['/api/v11/getCrmContactFromU8'], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_crm_contact_from_u8(self, model=None, ids=None, **kw):
+        success, message, data, authdimen, deliver_add, bank = True, '', dict(), [], [], []
+        token = kw.pop('token')
+        env = self.authenticate(token)
+        if not env:
+            return self.no_token()
+        try:
+            a_company = kw.get('companycode')
+            cuscode = kw.get('cuscode')
+            from ..public import connect_mssql, public
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            database = public.u8_account_name(a_company, odoo.tools.config['enviroment'])
+            sql_cus = f"select cContactCode,cContactName from {database}.dbo.Crm_Contact where cCusCode='{cuscode}' or (cCusCode is null or cCusCode='') "
+            res_cus = mssql.query(sql_cus)
+            data = list(map(lambda x: {"code": x[0], "name": x[1]}, res_cus))
         except Exception as e:
             success, message = False, str(e)
         finally:

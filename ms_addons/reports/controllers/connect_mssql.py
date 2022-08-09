@@ -33,7 +33,23 @@ class Mssql:
                 'database': 'ErpCrmDB',
                 'port': 1433,
                 'charset': 'utf8'
-            }
+            },
+            "158_999": {
+                'host': '192.168.0.158',
+                'user': 'leihui',
+                'password': 'leihui',
+                'database': 'UFDATA_999_2017',
+                'port': 1433,
+                'charset': 'utf8'
+            },
+            "154_999": {
+                'host': '192.168.0.154',
+                'user': 'crm',
+                'password': 'crm',
+                'database': 'UFDATA_999_2017',
+                'port': 1433,
+                'charset': 'utf8'
+            },
         }
         self.__db = pymssql.connect(**dict_db[dbselect])
 

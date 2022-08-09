@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import http
+from odoo import http, tools
+from odoo.http import request
 
 from .public import *
 from .connect_mssql import Mssql
@@ -491,7 +492,9 @@ class Reports(http.Controller):
                 item['category'] = item['category_id'][1]
                 item['customer'] = item['customer_id'][1]
                 item['status'] = item['status_id'][1]
-                item['cycle'] = datetime.datetime.strftime(item['date_from'],'%Y-%m-%d') + '->' + datetime.datetime.strftime(item['date_to'],'%Y-%m-%d')
+                item['cycle'] = datetime.datetime.strftime(item['date_from'],
+                                                           '%Y-%m-%d') + '->' + datetime.datetime.strftime(
+                    item['date_to'], '%Y-%m-%d')
                 users = env['xlcrm.users'].sudo().search_read([('id', 'in', item['project_attend_user_ids'])])
                 attends = ''
                 for user in users:
@@ -520,8 +523,9 @@ class Reports(http.Controller):
                 if remarks_result:
                     for remark in remarks_result:
                         remarks = (remarks + '；' + '日志操作时间：%s;日志内容：%s' % (
-                            datetime.datetime.strftime(remark['update_time'],'%Y-%m-%d %H:%M:%S'), remark['content'])) if remarks else '日志操作时间：%s;日志内容：%s' % (
-                            datetime.datetime.strftime(remark['update_time'],'%Y-%m-%d %H:%M:%S'), remark['content'])
+                            datetime.datetime.strftime(remark['update_time'], '%Y-%m-%d %H:%M:%S'),
+                            remark['content'])) if remarks else '日志操作时间：%s;日志内容：%s' % (
+                            datetime.datetime.strftime(remark['update_time'], '%Y-%m-%d %H:%M:%S'), remark['content'])
                 item['remarks'] = remarks
                 if ids and product_result and len(ids) == 1:
                     product_result = product_result[0]
@@ -2549,3 +2553,231 @@ class Reports(http.Controller):
         rp = {'status': 200, 'message': message, 'success': success, 'data': result, 'total': count, 'page': offset + 1,
               'per_page': limit}
         return json_response(rp)
+
+    @http.route([
+        '/api/v11/reports/getAccountBankFromU8',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_account_bank(self, model=None, ids=None, **kw):
+        success, message, result, count, offset, limit = True, '', '', 0, 0, 25
+        token = kw.pop('token')
+        env = authenticate(token)
+        if not env:
+            return no_token()
+        from .connect_mssql import Mssql
+        import odoo
+        con_str = '158_999'
+        if odoo.tools.config["enviroment"] == 'PRODUCT':
+            con_str = '154_999'
+        mssql = Mssql(con_str)
+        res = mssql.query("select ID,lYear,AcctName,a_company,UnitName from v_CN_AcctInfo")
+        result = list(map(lambda x: {"id": x[0], "year": x[1], "bank": x[2], "a_company": x[3], "company": x[4]}, res))
+        rp = {'status': 200, 'message': message, 'data': result}
+        return json_response(rp)
+
+    @http.route([
+        '/api/v11/reports/getBankJournalList',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_bank_journal_list(self, model=None, ids=None, **kw):
+        success, message, result, count, offset, limit = True, '', [], 0, 0, 25
+        token = kw.pop('token')
+        env = authenticate(token)
+        if not env:
+            return no_token()
+        try:
+            bank, period, company = '', '', ''
+            if kw.get("data"):
+                json_data = kw.get("data").replace('null', 'None')
+                query_filter = ast.literal_eval(json_data)
+                offset = query_filter.pop("page_no") - 1
+                limit = query_filter.pop("page_size")
+                bank = query_filter.get('bank')
+                period = query_filter.get('period')
+                company = query_filter.get('company')
+            from .connect_mssql import Mssql
+            from .public import u8_account_name
+            import odoo
+            con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
+            if enviroment == 'PRODUCT':
+                con_str = '154_999'
+            mssql = Mssql(con_str)
+            lyear, lperiod = period[:4], int(period[4:])
+            # 获取账套
+            query_a = [" 1=1"]
+            if bank:
+                query_a.append(f"B.AcctName='{bank}'")
+            if company:
+                query_a.append(f"B.Unitname='{company}'")
+            sql_a = f"select distinct B.a_company from v_CN_AcctInfo B where {' and '.join(query_a)}"
+            res = mssql.query(sql_a)
+            a_companys = list(map(lambda x: x[0], res))
+            sql_list = []
+            for a_company in a_companys:
+                db = u8_account_name(a_company, enviroment)
+                sql_list.append(
+                    f"select B.UnitName,B.AcctName,A.CurTypeName,isnull(C.mb,0)+sum(Debit)-sum(Credit) as yu,'{a_company}' as a_company from {db}.dbo.CN_AcctBookView A"
+                    f" LEFT JOIN {db}.dbo.CN_AcctInfo B on A.AcctID=B.ID"
+                    f" LEFT JOIN {db}.dbo.GL_accsum C on A.Period=C.iperiod and A.lYear=C.iyear and B.SubjectCode=C.ccode"
+                    f" where {' and '.join(query_a)} and A.lyear='{lyear}' and A.Period='{lperiod}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID"
+                    f" group by B.UnitName,B.AcctName,A.CurTypeName,C.mb")
+            res = mssql.query(' union '.join(sql_list))
+            for _res in res:
+                tmp = {}
+                tmp['company'] = _res[0]
+                tmp['bank'] = _res[1]
+                tmp['currency'] = _res[2]
+                tmp['balance'] = _res[3]
+                tmp['a_company'] = _res[4]
+                tmp['period'] = period
+                f_fmt = f"{period}_{tmp['a_company']}_{_res[0]}_{_res[1].replace(':', '')}"
+                filename = env['xlcrm.documents'].sudo().search(
+                    [('res_model', '=', 'reports.accountStatement'), ('datas_fname', '=', f_fmt)],
+                    order='write_date desc', limit=1)
+                tmp['filename'] = f"{f_fmt}.{filename.name.rsplit('.', 1)[-1]}" if filename else ''
+                tmp['file_url'] = f"{odoo.tools.config['serve_url']}/smb/file/{filename.id}" if filename else ''
+                result.append(tmp)
+            message = "success"
+            count = len(result)
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': result, 'total': count, 'page': offset + 1,
+              'per_page': limit}
+        return json_response(rp)
+
+    @http.route([
+        '/api/v11/reports/getBankJournalDetail',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_bank_journal_detail(self, model=None, ids=None, **kw):
+        success, message, result, count, offset, limit = True, '', [], 0, 0, 25
+        token = kw.pop('token')
+        env = authenticate(token)
+        if not env:
+            return no_token()
+        try:
+            bank, period, company, a_company = '', '', '', ''
+            if kw.get("data"):
+                json_data = kw.get("data").replace('null', 'None')
+                query_filter = ast.literal_eval(json_data)
+                bank = query_filter.get('bank')
+                period = query_filter.get('period')
+                company = query_filter.get('company')
+                a_company = query_filter.get('a_company')
+            from .connect_mssql import Mssql
+            from .public import u8_account_name
+            import odoo
+            con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
+            if enviroment == 'PRODUCT':
+                con_str = '154_999'
+            mssql = Mssql(con_str)
+            lyear, lperiod = period[:4], int(period[4:])
+            # 获取账套
+            query_a = [" 1=1"]
+            if bank:
+                query_a.append(f"B.AcctName='{bank}'")
+            if company:
+                query_a.append(f"B.Unitname='{company}'")
+            db = u8_account_name(a_company, enviroment)
+            sql_ = f"select A.Period,convert(date,A.AcctDate) as AcctDate,B.UnitName,A.Summary,A.CurTypeName,A.Debit,A.Credit,A.cCusName,cVenName from {db}.dbo.CN_AcctBookView A" \
+                   f" LEFT JOIN {db}.dbo.CN_AcctInfo B on A.AcctID=B.ID" \
+                   f" where {' and '.join(query_a)} and A.lyear='{lyear}' and A.Period='{lperiod}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID"
+            res = mssql.query(sql_)
+            for _res in res:
+                tmp = {}
+                tmp['period'] = period
+                tmp['a_company'] = a_company
+                tmp['bank'] = bank
+                tmp['acctdate'] = _res[1]
+                tmp['company'] = _res[2]
+                tmp['summary'] = _res[3]
+                tmp['currency'] = _res[4]
+                tmp['debit'] = _res[5]
+                tmp['credit'] = _res[6]
+                tmp['ccusname'] = _res[7]
+                tmp['cvenname'] = _res[8]
+
+                result.append(tmp)
+            message = "success"
+            count = len(result)
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': result, 'total': count, 'page': offset + 1,
+              'per_page': limit}
+        return json_response(rp)
+
+    @http.route([
+        '/api/v11/upload/accountStatement'
+    ], auth='none', type='http', csrf=False, methods=['POST', 'OPTIONS'])
+    def upload_addfile_account_statement(self, success=False, message='', ret_data='', file='', **kw):
+        filename, file_url = None, None
+        if file:
+            filename = file.filename
+            token = kw.pop('token')
+            size = kw.pop('fileSize')
+            env = authenticate(token)
+            if not env:
+                return no_token()
+            try:
+                from .public import save_file
+                success, url, name, message = save_file(env.uid, file, 'CRM', f"accountStatement/{tools.config['enviroment']}")
+                if not success:
+                    rp = {'status': 200, 'data': [], 'success': success, 'message': message}
+                    return json_response(rp)
+                file_data = {'name': name,
+                             'datas_fname': filename.rsplit('.', 1)[0],
+                             'res_model': 'reports.accountStatement',
+                             'mimetype': file.mimetype,
+                             'create_user_id': env.uid,
+                             'file_size': size,
+                             'type': 'url',
+                             'url': url.replace("/","\\")}
+                file_id = env['xlcrm.documents'].sudo().create(file_data).id
+                file_url = f"{odoo.tools.config['serve_url']}/smb/file/{file_id}"
+                env.cr.commit()
+                success = True
+            except Exception as e:
+                ret_data, success, message = '', False, str(e)
+            finally:
+                env.cr.close()
+        rp = {'status': 200, 'filename': filename, 'file_url': file_url, 'success': success, 'message': message}
+        return json_response(rp)
+
+    @http.route(['/smb/file/<int:id>'], csrf=False, type='http', auth="public", cors='*')
+    def smb_content_file(self, id, width=0, height=0, download=True, **kw):
+        res = request.env['xlcrm.documents'].sudo().search([('id', '=', id)])
+        status, headers, content = download_smb_file(res)
+        if status == 304:
+            return werkzeug.wrappers.Response(status=304, headers=headers)
+        elif status == 301:
+            return werkzeug.utils.redirect(content, code=301)
+        elif status != 200 and download:
+            return request.not_found()
+
+        height = int(height or 0)
+        width = int(width or 0)
+        if content and (width or height):
+            # resize maximum 500*500
+            if width > 500:
+                width = 500
+            if height > 500:
+                height = 500
+            content = odoo.tools.image_resize_image(base64_source=content, size=(width or None, height or None),
+                                                    encoding='base64', filetype='PNG')
+            # resize force png as filetype
+            headers = self.force_contenttype(headers, contenttype='image/png')
+
+        if content:
+            image_base64 = content
+        else:
+            image_base64 = self.placeholder(image='placeholder.png')  # could return (contenttype, content) in master
+            headers = self.force_contenttype(headers, contenttype='image/png')
+
+        headers.append(('Content-Length', len(image_base64)))
+        response = request.make_response(image_base64, headers)
+        response.status_code = status
+        aa = response.data
+        return response

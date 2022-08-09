@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import ast, odoo, base64, json, werkzeug, time, re, csv, _ast
-from odoo import api,registry
+import ast, odoo, base64, json, werkzeug, time, re, csv, _ast, os
+from odoo import api, registry
 from hashlib import md5
 from odoo.http import request
 from datetime import date, datetime, timedelta
@@ -77,7 +77,7 @@ def literal_eval(expression, _octal_digits=frozenset('01234567')):
     return value
 
 
-def check_sign(token, kw):    
+def check_sign(token, kw):
     sign = ast.literal_eval(list(kw.keys())[0].replace('null', '""')).get("sign")
     appkey = ast.literal_eval(list(kw.keys())[0].replace('null', '""')).get("appkey")
     timestamp = ast.literal_eval(list(kw.keys())[0].replace('null', '""')).get("timestamp")
@@ -88,6 +88,7 @@ def check_sign(token, kw):
     md5_obj.update(check_req_str.encode(encoding='utf-8'))
     check_sign_str = md5_obj.hexdigest()
     return check_sign_str == sign
+
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -101,6 +102,7 @@ class MyEncoder(json.JSONEncoder):
             return float(obj)
         else:
             return json.JSONEncoder.default(self, obj)
+
 
 def no_sign():
     rp = {'status': '401', 'result': '', 'success': False, 'message': 'invalid sign!'}
@@ -183,7 +185,8 @@ def get_token(env, uid):
     # password = kw.pop('password')
     user_obj = env['xlcrm.users'].sudo().search([('id', '=', uid)], limit=1)
     username = user_obj["username"]
-    token = base64.urlsafe_b64encode((','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
+    token = base64.urlsafe_b64encode(
+        (','.join([serve, db, username, str(uid), str(int(time.time()))])).encode()).replace(
         b'=', b'').decode()
     token = {
         'token': token,
@@ -546,3 +549,120 @@ def changeCount(env, result, type='reduce'):
         status['message'] = str(e)
     finally:
         return status
+
+
+def u8_account_name(code, enviroment):
+    name = {
+        'TEST': {
+            "103": "UFDATA_103_2017",
+            "601": "UFDATA_601_2017",
+            "606": "UFDATA_606_2021",
+            "101": "UFDATA_101_2017",
+            "102": "UFDATA_102_2017",
+            '109': 'UFDATA_109_2022',
+            "110": "UFDATA_110_2021",
+            "151": "UFDATA_151_2017",
+            "602": "UFDATA_602_2017",
+            "611": "UFDATA_611_2017",
+            "201": "UFDATA_201_2017",
+            "106": "UFDATA_106_2017",
+            "108": "UFDATA_108_2017",
+            "613": "UFDATA_613_2017",
+            "133": "UFDATA_133_2017",
+            "111": "UFDATA_111_2017",
+            "999": "UFDATA_999_2017"
+        },
+        'PRODUCT': {
+            '101': 'UFDATA_101_2017',
+            '103': 'UFDATA_103_2017',
+            '106': 'UFDATA_106_2017',
+            '108': 'UFDATA_108_2017',
+            '603': 'UFDATA_603_2017',
+            '105': 'UFDATA_105_2018',
+            '109': 'UFDATA_109_2022',
+            '604': 'UFDATA_604_2017',
+            '605': 'UFDATA_605_2022',
+            '601': 'UFDATA_601_2017',
+            '602': 'UFDATA_602_2017',
+            '606': 'UFDATA_606_2021',
+            '102': 'UFDATA_102_2017',
+            "999": "UFDATA_999_2017"
+        },
+    }
+    return name[enviroment][code]
+
+
+from smb.SMBConnection import SMBConnection
+import sys
+
+host = "Filesystems" if sys.platform == "win32" else "192.168.0.175"
+
+
+class Smb:
+    def __init__(self):
+        self.host = host  # ip或域名，改成你自己的
+        self.username = "Web"  # 用户名，改成你自己的
+        self.password = "Szxl2021"  # 密码，改成你自己的
+        self.conn = None
+
+    def __enter__(self):
+        self.conn = SMBConnection(self.username, self.password, "", host, use_ntlm_v2=True, is_direct_tcp=True)
+        self.conn.connect(self.host, 445)  # smb协议默认端口445
+        return self.conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()
+
+
+def save_file(uid, file, server_name, tar):
+    try:
+        import datetime, pytz
+        pz = pytz.timezone("Asia/Shanghai")
+        key_time = datetime.datetime.strftime(datetime.datetime.now(tz=pz), '%Y%m%d%H%M%S%f')
+        name = f"{uid}_{key_time}_{file.filename}"
+        url = f"\Filesystems\{server_name}\{tar}\{name}"
+        path = f"{tar}/{name}"
+        with Smb() as s:
+            s.storeFile(server_name, path, file)
+            return True, url, name, ''
+    except Exception as e:
+        return False, '', '', str(e)
+
+
+def download_smb_file(res):
+    status, headers, content = None, [], None
+    try:
+        filename, unique = f"{res.datas_fname}.{res.name.rsplit('.', 1)[-1]}", None
+        with Smb() as s:
+            # '\Filesystems\accountStatement\TEST\1_20220805095043616000_202204_101_新怡富_B中行深圳蛇口网谷支行-754966689032.txt'
+            res_ = res.url.split("\\")
+            server_name, path = res_[2], f"{res_[3]}/{res_[4]}/{res_[5]}"
+            with open(res_[5], 'wb') as file:
+                s.retrieveFile(server_name, path, file)
+            with open(res_[5], 'rb') as file:
+                content = file.read()
+            os.remove(res_[5])
+        headers += [('Content-Type', res.mimetype), ('X-Content-Type-Options', 'nosniff')]
+
+        # cache
+        import hashlib, http
+        etag = hasattr(request, 'httprequest') and request.httprequest.headers.get('If-None-Match')
+        retag = '"%s"' % hashlib.md5(content).hexdigest()
+        status = status or (304 if etag == retag else 200)
+        headers.append(('ETag', retag))
+        headers.append(('Cache-Control', 'max-age=%s' % (http.STATIC_CACHE if unique else 0)))
+
+        # content-disposition default name
+        headers.append(('Content-Disposition', content_disposition(filename)))
+    except Exception as e:
+        print(e)
+    finally:
+        return status, headers, content
+
+
+def content_disposition(filename):
+    from werkzeug import urls
+    filename = odoo.tools.ustr(filename)
+    escaped = urls.url_quote(filename, safe='')
+
+    return "attachment; filename*=UTF-8''%s" % escaped

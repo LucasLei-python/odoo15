@@ -507,7 +507,7 @@ class XlCrmExtend(http.Controller, Base):
                     if user.group_id.name != 'Manager':
                         header = pgsql.query(f"select name from person_header_u8 where header='{user.nickname}'")
                         if header:
-                            tmp_query = f" and a.cpersonname in {tuple(map(lambda x:x[0],header))}"
+                            tmp_query = f" and a.cpersonname in {tuple(map(lambda x: x[0], header))}"
                         else:
                             sign_power = 0
                             tmp_query = f" and a.cpersonname='{user.nickname}'"
@@ -529,19 +529,22 @@ class XlCrmExtend(http.Controller, Base):
                         query += f" and cpersonname like '%{query_filter.get('cpersonname')}%'"
 
                     base_sql = f"select distinct a.a_company,a.ccuscode,a.ccusname,a.ccusdefine7,a.ccdefine3,COALESCE(b.ccusmnemcode, a.ccusmnemcode),a.cdepname,a.cpersonname," \
-                               f"COALESCE (b.status, 0) as status from cus_from_u8 a left join u8_cus_synchronize b on a.a_company=b.a_company and a.ccuscode=b.code where 1=1 and a.ccusmnemcode is null "
-
+                               f"COALESCE (b.status, 0) as status from cus_from_u8 a left join u8_cus_synchronize b on a.a_company=b.a_company and a.ccuscode=b.code where 1=1 "
                     res = pgsql.query(
                         f"{base_sql}{query_company}{query} order by a.ccuscode offset {offset * limit} limit {limit}")
+                    # print(f"{base_sql}{query_company}{query} order by a.ccuscode offset {offset * limit} limit {limit}")
                     for item in res:
+                        # belong = True
+                        # if res[9] and res[9] != user.nickname:
+                        #     belong = False
                         result.append(
                             {'a_company': item[0], 'ccuscode': item[1], 'ccusname': item[2], 'ccusdefine7': item[3]
                                 , 'ccdefine3': item[4], 'ccusmnemcode': item[5], 'sales_dept': item[6],
-                             'spec_operator': item[7], 'status': item[8],'sign_power':sign_power})
+                             'spec_operator': item[7], 'status': item[8], 'sign_power': sign_power})
                     res_count = pgsql.query(f"select count(1) from ({base_sql}{query_company}{query}) a")
                     count = res_count[0][0] if res_count else 0
                     company = list(
-                        map(lambda x: x[0], pgsql.query(f'select distinct a_company from ({base_sql}{query}) a')))
+                        map(lambda x: x[0], pgsql.query(f'select distinct a_company from ({base_sql}) a')))
 
                 message = "success"
                 success = True
@@ -574,7 +577,7 @@ class XlCrmExtend(http.Controller, Base):
             ccusdefine3 = data.get('ccusdefine3')
             ccusmnemcode = data.get('ccusmnemcode')
             status = data.get("status")
-            nickname = env['xlcrm.users'].sudo().search([('id','=',env.uid)],limit=1).nickname
+            nickname = env['xlcrm.users'].sudo().search([('id', '=', env.uid)], limit=1).nickname
             for company in (a_company, '999'):
                 res = env['u8.cus.synchronize'].sudo().search(
                     [('a_company', '=', company), ('code', '=', code), ('status', '<', 5)])
@@ -592,7 +595,8 @@ class XlCrmExtend(http.Controller, Base):
                     write_data = {'a_company': company, 'code': code,
                                   'name': name, 'abbrname': abbrname,
                                   'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
-                                  'ccusmnemcode': ccusmnemcode, 'status': status,'save_time': save_time, 'save_user': save_user}
+                                  'ccusmnemcode': ccusmnemcode, 'status': status, 'save_time': save_time,
+                                  'save_user': save_user}
                     if status == 3:
                         write_data.pop('save_time')
                         write_data.pop('save_user')
@@ -648,7 +652,8 @@ class XlCrmExtend(http.Controller, Base):
                         write_data = {'a_company': company, 'code': code,
                                       'name': name, 'abbrname': abbrname,
                                       'ccusdefine7': ccusdefine7, 'ccusdefine3': ccusdefine3,
-                                      'ccusmnemcode': ccusmnemcode, 'status': status,'save_time': save_time, 'save_user': save_user}
+                                      'ccusmnemcode': ccusmnemcode, 'status': status, 'save_time': save_time,
+                                      'save_user': save_user}
                         if status == 3:
                             write_data.pop('save_time')
                             write_data.pop('save_user')
