@@ -2,7 +2,7 @@
 
 from odoo import api, fields, models,registry
 import odoo
-from ..public import send_email_ToU8_EF,send_email_ToCUS_Account
+from ..public import send_email_ToU8_EF,send_email_ToCUS_Account,grab_consolidated,suit_consolidated
 
 
 class Xlaccount(models.Model):
@@ -17,10 +17,13 @@ class Xlaccount(models.Model):
     a_company = fields.Text('申请公司名称(集团内)')
     kc_company = fields.Text('客户下单公司名称(中文)')
     ccusabbname = fields.Text('客户下单公司简称')
+    ccusabbname_en = fields.Text('客户下单公司英文简称')
     ccuscode = fields.Char('客户代码')
     ccusmnemcode = fields.Char('助记码')
+
     ke_company = fields.Text('客户下单公司名称(英文)')
     kw_address = fields.Text('客户办公地址')
+    ke_address = fields.Char("客户英文地址")
     registered_address = fields.Text('客户注册地址')
     kf_address = fields.Text('客户工厂地址')
     krc_company = fields.Text('客户收货地址(中文)')
@@ -105,6 +108,16 @@ class Xlaccount(models.Model):
     @api.model
     def task(self):
         send_email_ToU8_EF()
+
+    @api.model
+    def get_consolidated(self):
+        try:
+            cr, env = self.get_env()
+            # grab_consolidated(env)
+            suit_consolidated(env)
+            cr.close()
+        except Exception as e:
+            print(e)
 
     @api.model
     def send_mail_list(self):

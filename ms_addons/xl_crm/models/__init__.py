@@ -65,3 +65,4 @@ from . import account_salesvp
 from . import account_affiliates
 from . import u8_customer
 from . import account_cus, account_cus_historys, synchronization_cus_ccusmnemcode
+from . import suit_cus_consolidated

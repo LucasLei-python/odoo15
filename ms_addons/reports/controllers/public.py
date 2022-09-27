@@ -5,6 +5,7 @@ from hashlib import md5
 from odoo.http import request
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from .connect_mssql import Mssql
 
 try:  # Python 3
     import configparser
@@ -666,3 +667,59 @@ def content_disposition(filename):
     escaped = urls.url_quote(filename, safe='')
 
     return "attachment; filename*=UTF-8''%s" % escaped
+
+
+def get_first_day(y, m):
+    if isinstance(m, str):
+        m = int(m)
+    m += 1
+    if m > 12:
+        y += 1
+        m = 1
+    return f"{y}-{m}"
+
+
+def get_u8_expense(i_period, ie_period):
+    results = []
+    db_sql = "SELECT name FROM MASter..SysDatabASes  where  name  like 'UFDATA_%'"
+    con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
+    if enviroment == 'PRODUCT':
+        con_str = '154_999'
+    with Mssql(con_str) as mssql:
+        db_res = mssql.query(db_sql)
+        for db in db_res:
+            try:
+                sql = f"""
+                    use {db[0]};
+                    exec Gl_Balance @tblname=N'tmpuf_expense_u8',@iPeriod='{i_period}',@iePeriod='{ie_period}',@kmcode1=N'',@kmcode2=N'',@jici1=1,@jici2=1,@bmoji=1,@wheremoney=N' where 1 = 1 ',@swhere=N'',@bVouch=0,@bshow=1,@swheother=N'',@bIncludeallaccount=0;
+                    select ccode_name,ccode,sum(bmd) as bmd from tempdb..tmpuf_expense_u8 where ccode_name is not null group by ccode_name,ccode
+                """
+                res = mssql.query(sql)
+                for _res in res:
+                    tmp = dict()
+                    tmp['code_name'] = _res[0].strip()
+                    tmp['code'] = _res[1].strip()
+                    tmp['bmd'] = _res[2]
+                    results.append(tmp)
+            except Exception as e:
+                pass
+    return parse_u8_expense(results)
+
+
+def parse_u8_expense(res):
+    result = []
+    base = ['差旅费', '招待费', '办公费', '房租水电', '网络费', '运输费', '保险费', '仓储费', '包装费', '装修费', '长期待摊费用', '固定资产', '诉讼费',
+            '审计费 咨询费', '律师代理费 顾问费', '业务宣传费', '代理手续费', '服务费', '报关手续费', '软件服务费', '商业保险', '福利费', '委托研发', '设计费', '加工费',
+            '专利费', '会务费', '修理费', '低值易耗品', '车船使用税', '职工福利费', '检测费', '社会保费', '住房公积金', '银行账户内转/公司间往来款', '技术服务费', '银行存款',
+            '长期股权投资', '律师费', '审计费', '审计', '咨询费', '上市中介机构服务费', '装备调试费', '交通费', '汽车费用', '电话费', '快递费', '物料消耗', '劳动保护费',
+            '职工教育经费', '职工薪酬', '社会保险', '非关联']
+    for _base in base:
+        tmp = filter(lambda x: x["code_name"] == _base, res)
+        if tmp:
+            result.append(
+                {'total': sum(list(map(lambda x: x["bmd"], tmp))), 'codes': ';'.join(map(lambda x: x["code"], tmp))})
+        else:
+            result.append({'total': 0, 'codes': ""})
+    total = sum(list(map(lambda x:x['total'],result)))
+    result.append({'total': total, 'codes': ""})
+    return result

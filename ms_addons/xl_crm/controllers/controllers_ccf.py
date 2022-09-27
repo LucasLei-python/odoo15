@@ -134,7 +134,6 @@ class XlCrmCCF(http.Controller, Base, CCF):
         success, message, result, ret_object, count, offset, limit = True, '', '', '', 0, 0, 80
         token = kw.pop('token')
         env = self.authenticate(token)
-        env = env
         if not env:
             return self.no_token()
         if not self.check_sign(token, kw):
@@ -154,9 +153,9 @@ class XlCrmCCF(http.Controller, Base, CCF):
             if result:
                 result = result[0]
                 result['type'] = 'set'
-                if result['station_no'] == 99 and odoo.tools.config["enviroment"] == 'PRODUCT':
+                if result['station_no'] == 99:
                     self.insert_brandnamed_toU8(result)
-                    # self.insert_brandlimit_toU8(review_id, env)
+                    self.insert_brandlimit_toU8(review_id, env)
                 si_ = str(env.uid)
                 if result['signer'] and si_ in result['signer'].split(','):
                     result['status_id'] = 0
@@ -389,7 +388,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
     def get_account_detail_by_id12(self, model=None, ids=None, **kw):
         success, message, result, ret_temp, count, offset, limit = True, '', '', {}, 0, 0, 25
         token = kw.pop('token')
-        env = env = self.authenticate(token)
+        env = self.authenticate(token)
         if not env:
             return self.no_token()
         domain = []
@@ -1156,8 +1155,10 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 con_str = '154_999'
             mssql = connect_mssql.Mssql(con_str)
             database = public.u8_account_name(a_company, odoo.tools.config['enviroment'])
-            sql_cus = f"select cCusMnemCode,cCusPhone,cCusPerson,cCusHand,cCusEmail,cCusCreGrade,cCCCode,bCredit,bCreditDate" \
-                      f",cCusDefine4,b.ccdefine2,cCusDefine9,iCusCreLine,c.cSSCode+'-'+c.cSSName as ccussscode from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
+            sql_cus = f"select cCusMnemCode,cCusPhone,cCusPerson,cCusHand,cCusEmail,b.ccdefine14,cCCCode,bCredit,bCreditDate" \
+                      f",cCusDefine4,b.ccdefine2,cCusDefine9,iCusCreLine,c.cSSCode+'-'+c.cSSName as ccussscode,cCusDefine8,iEmployeeNum,cRegCash," \
+                      f"cCusLPerson,dDepBeginDate,cCusRegCode,b.ccdefine3,a.iCusTaxRate,a.cCusAddress,a.cCusDefine6,a.cCusDefine10,a.cCusDefine2," \
+                      f"a.cCusDefine3,b.ccdefine11,a.cCusDefine1,a.cCusDefine5,a.cCusDefine7 from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
                       f" left join {database}.dbo.SettleStyle c on a.ccussscode=c.cSSCode where a.cCusCode='{cuscode}' "
             res_cus = mssql.query(sql_cus)
             sql_dimen = f"select b.cADCode+'-'+b.cADName as dimen from {database}.dbo.Customer_Auth a left join {database}.dbo.AA_AuthDimen_Sub b on a.Privilege_ID=b.cADCode " \
@@ -1165,7 +1166,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
             res_dimen = mssql.query(sql_dimen)
             if res_dimen:
                 authdimen = list(map(lambda x: x[0], res_dimen))
-            sql_address = f"select cAddCode,cDeliverAdd,cEnglishAdd2,cEnglishAdd3,cEnglishAdd4,bDefault,cLinkPerson,cDeliverUnit from {database}.dbo.cusdeliveradd where cCusCode='{cuscode}'"
+            sql_address = f"select cAddCode,cDeliverAdd,cEnglishAdd2,cEnglishAdd3,cEnglishAdd4,bDefault,b.cContactName as cContactName,cDeliverUnit,cLinkPerson from {database}.dbo.cusdeliveradd " \
+                          f" a left join {database}.dbo.Crm_Contact b on a.cLinkPerson=b.cContactCode where a.cCusCode='{cuscode}'"
             res_address = mssql.query(sql_address)
             if res_address:
                 deliver_add = list(map(lambda x: {
@@ -1175,8 +1177,9 @@ class XlCrmCCF(http.Controller, Base, CCF):
                     "cenglishadd3": x[3],
                     "cenglishadd4": x[4],
                     "bdefault": '1' if x[5] else '0',
-                    "clinkperson": x[6],
-                    "cdeliverunit": x[7]
+                    "clinkname": x[6],
+                    "cdeliverunit": x[7],
+                    "clinkperson": x[8]
                 }, res_address))
             sql_bank = f"select cBank,cBranch,cAccountNum,cAccountName,bDefault from {database}.dbo.CustomerBank where cCusCode='{cuscode}'"
             res_bank = mssql.query(sql_bank)
@@ -1195,8 +1198,6 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 'email': res_cus[0][4],
                 'credit_rank': res_cus[0][5],
                 'sort_code': res_cus[0][6],
-                # 'credit': '1' if res_cus[0][7] else '0',
-                # 'creditdate': '1' if res_cus[0][8] else '0',
                 'account_remark': res_cus[0][9],
                 'ccdefine2': res_cus[0][10],
                 'payment': res_cus[0][11],
@@ -1204,7 +1205,24 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 'ccussscode': res_cus[0][13],
                 'authdimen': authdimen,
                 'deliver_add': deliver_add,
-                'bank': bank
+                'bank': bank,
+                'cus_en_address': res_cus[0][14],
+                'employee': res_cus[0][15],
+                'reg_cash': float(res_cus[0][16]) / 1000 if res_cus[0][16] else 0,
+                'legal_man': res_cus[0][17],
+                'begin_date': res_cus[0][18],
+                'tax_reg_code': res_cus[0][19],
+                'ccdefine3': res_cus[0][20],
+                'cus_tax_rate': res_cus[0][21],
+                'address': res_cus[0][22],
+                'loa': res_cus[0][23],
+                'name_used_before': res_cus[0][24],
+                'invoicing_date': res_cus[0][25],
+                'settlement_date': res_cus[0][26],
+                'customer_class': res_cus[0][27],
+                'reconciliation_date': res_cus[0][28],
+                'trade_terms': res_cus[0][29],
+                'ke_company': res_cus[0][30],
             }
         except Exception as e:
             success, message = False, str(e)
@@ -1228,9 +1246,11 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 con_str = '154_999'
             mssql = connect_mssql.Mssql(con_str)
             database = public.u8_account_name(a_company, odoo.tools.config['enviroment'])
-            sql_cus = f"select cContactCode,cContactName from {database}.dbo.Crm_Contact where cCusCode='{cuscode}' or (cCusCode is null or cCusCode='') "
+            sql_cus = f"select cContactCode,cContactName,cMobilePhone,cOfficePhone,cMemo from {database}.dbo.Crm_Contact where cCusCode='{cuscode}' or (cCusCode is null or cCusCode='') "
             res_cus = mssql.query(sql_cus)
-            data = list(map(lambda x: {"code": x[0], "name": x[1]}, res_cus))
+            data = list(
+                map(lambda x: {"code": x[0], "name": x[1], "mobile_phone": x[2], "office_phone": x[3], "cmemo": x[4]},
+                    res_cus))
         except Exception as e:
             success, message = False, str(e)
         finally:

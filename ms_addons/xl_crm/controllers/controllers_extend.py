@@ -614,6 +614,43 @@ class XlCrmExtend(http.Controller, Base):
         return self.json_response(rp)
 
     @http.route([
+        '/api/v11/setCusConsolidatedItem',
+    ], auth='none', type='http', csrf=False, methods=['POST'])
+    def set_cus_item(self, model=None, success=True, message='', **kw):
+        success, message = True, ''
+        try:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            data = self.literal_eval(list(kw.keys())[0].replace('null', "''").replace('false', "''")).get("data")
+            res = env['u8.cus.consolidated'].sudo().search([('id', '=', data.get("id"))])
+            res.brand_limit = data.get("brand_limit")
+            res.status = data.get("status")
+            brand_res = env['u8.cus.consolidated.brand'].sudo().search([("cus_con_id", "=", data.get("id"))])
+            for brand in brand_res:
+                env['u8.cus.consolidated.material'].sudo().search([("brand_con_id", "=", brand.id)]).unlink()
+                brand.unlink()
+            for b_d in data.get("brandData"):
+                b_d["cus_con_id"] = data.get("id")
+                b_d["init_user"] = env.uid
+                b_id = env['u8.cus.consolidated.brand'].sudo().create(b_d).id
+                material = b_d.get("material")
+                if material:
+                    material_data = list(map(lambda x: {"brand_con_id": b_id, "material_limit": x}, material))
+                    env['u8.cus.consolidated.material'].sudo().create(material_data)
+            message = "success"
+            success = True
+            env.cr.commit()
+        except Exception as e:
+            success, message = False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'success': success}
+        return self.json_response(rp)
+
+    @http.route([
         '/api/v11/batchSetCusItem',
     ], auth='none', type='http', csrf=False, methods=['POST'])
     def batch_set_cus_item(self, model=None, success=True, message='', **kw):
@@ -668,4 +705,51 @@ class XlCrmExtend(http.Controller, Base):
             env.cr.close()
 
         rp = {'status': 200, 'message': message, 'success': success}
+        return self.json_response(rp)
+
+    @http.route([
+        '/api/v11/getConsolidated',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_consolidated(self, model=None, success=True, message='', **kw):
+        success, message, result, company, count, offset, limit = True, '', [], [], 0, 0, 5000
+        try:
+            token = kw.pop('token')
+            env = self.authenticate(token)
+            if not env:
+                return self.no_token()
+            if kw.get("data"):
+                query_filter = self.literal_eval(kw.get("data"))
+                offset = query_filter.pop("page_no") - 1
+                limit = query_filter.pop("page_size")
+                domain = []
+                if query_filter.get("source"):
+                    domain.append(("source", "=", query_filter.get("source")))
+                if query_filter.get("name"):
+                    domain.append(("name", "ilike", query_filter.get("name")))
+                if query_filter.get("status") != "":
+                    domain.append(("status", "=", query_filter.get("status")))
+                result = env['u8.cus.consolidated'].sudo().search_read(domain, offset=offset * limit, limit=limit)
+                for res in result:
+                    res['brandData'] = list()
+                    res_brand = env['u8.cus.consolidated.brand'].sudo().search(
+                        [('cus_con_id', '=', res["id"])])
+                    for brand in res_brand:
+                        tmp = dict()
+                        tmp['brand_name'] = brand.brand_name
+                        tmp['pm'] = brand.pm
+                        material_limit = env["u8.cus.consolidated.material"].sudo().search_read(
+                            [("brand_con_id", "=", brand.id)], fields=["material_limit"])
+                        tmp['material'] = list(map(lambda x: x["material_limit"], material_limit))
+                        res['brandData'].append(tmp)
+                count = env['u8.cus.consolidated'].sudo().search_count(domain)
+                message = "success"
+                success = True
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'success': success, 'data': result, 'company': company, 'total': count,
+              'page': offset + 1,
+              'per_page': limit}
         return self.json_response(rp)

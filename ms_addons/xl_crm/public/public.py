@@ -50,7 +50,7 @@ class Overdue(controllers_base.Base):
             start, end = min(years), max(years)
             sql = "select distinct year(ddate) as year,month(ddate) as month, YuQiDays,cCusCode,ccusName,companycodename,dGatheringDate From v_sdo_so_customerReceivedPayment a " \
                   "where ccusName in (%s) and year(ddate) between %d and %d and FaHuoChaiFeniSum>0 and YuQiDays not in ('到期日不正确','未收款')  " \
-                  "and not exists (select * from v_sdo_so_customerReceivedPayment b where b.ccusName in (%s) and a.cCusCode=b.cCusCode and a.companycodename=b.companycodename and convert(date,a.dGatheringDate) =convert(date,b.dGatheringDate) and b.YuQiDays not in ('到期日不正确','未收款') and convert(int,a.YuQiDays)< convert(int,b.YuQiDays))" % (
+                  "and not exists (select * from v_sdo_so_customerReceivedPayment b where b.ccusName in (%s) and a.cCusCode=b.cCusCode and a.companycodename=b.companycodename and convert(date,a.dGatheringDate) =convert(date,b.dGatheringDate) and b.YuQiDays not in ('到期日不正确','未收款') and b.FaHuoChaiFeniSum>0 and convert(int,a.YuQiDays)< convert(int,b.YuQiDays))" % (
                       condition, start, end, condition)
             result = self.mssql.query(sql)
             res_temp = []

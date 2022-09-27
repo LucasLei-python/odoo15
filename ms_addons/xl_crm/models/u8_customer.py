@@ -31,14 +31,30 @@ class ToU8Customer(models.Model):
     # ccuscreditcompany = fields.Text('信用单位')
     credit_rank = fields.Text('信用等级')
     credit_amount = fields.Text('信用额度')
-    credit = fields.Text('是否控制信用额度',default='1')
-    creditdate = fields.Text('是否控制信用期限',default='1')
+    credit = fields.Text('是否控制信用额度', default='1')
+    creditdate = fields.Text('是否控制信用期限', default='1')
     ccussaprotocol = fields.Text('销售默认收付款协议')
     status = fields.Integer('同步状态', default=0)
     review_id = fields.Many2one('xlcrm.account', store=True, string='主单ID')
     remark = fields.Char('备注')
     category = fields.Char('类型')
     ccusmnemcode = fields.Char('助记码')
+    cus_en_address = fields.Char('英文地址')
+    reg_cash = fields.Char('注册资本')
+    legal_man = fields.Char('法人')
+    begin_date = fields.Char('成立日期')
+    tax_reg_code = fields.Char('税号')
+    ccdefine3 = fields.Char('英文简称')
+    cus_tax_rate = fields.Char('税率')
+    vmi = fields.Char('是否vmi交易')
+
+    address = fields.Char('开票地址')
+    loa = fields.Char("LOA授权方")
+    name_used_before = fields.Char("曾用名")
+    invoicing_date = fields.Char("开票日")
+    settlement_date = fields.Char("结算日")
+    customer_class = fields.Char("客户分类")
+
     # deliver_add = fields.One2many('xlcrm.u8_customer_deliver_add')
     # bank = fields.One2many('xlcrm.u8_customer_bank')
 
@@ -50,18 +66,25 @@ class ToU8Customer(models.Model):
         cr, env = self.get_env()
         review_ids = []
         res = env['xlcrm.u8_customer'].sudo().search([('status', '=', 0)])
-        for _res in res:
-            if _res.review_id.status_id == 3:
-                des = synchronization_cus(_res,env)
-                if des.get("ok"):
-                    _res.status = 1
-                    _res.code = des.get('msg')
-                    _res.remark = 'ok'
-                    if _res.a_company != '999':
-                        _res.review_id.ccuscode = des.get('msg')
-                        review_ids.append(_res.review_id.id)
-                else:
-                    _res.remark = des.get("msg")
+        res_set = set(map(lambda x: x.a_company, res))
+        from ..public import u8_login_user
+        for a_company in res_set:
+            tar_res = list(filter(lambda x: x.a_company == a_company, res))
+            with u8_login_user.U8Login(a_company) as login:
+                for _res in tar_res:
+                    # _res.review_id.status_id == 3 or
+                    if _res.review_id.status_id == 3:
+                        print("login success")
+                        des = synchronization_cus(_res, env, login)
+                        if des.get("ok"):
+                            _res.status = 1
+                            _res.code = des.get('msg')
+                            _res.remark = 'ok'
+                            if _res.a_company != '999':
+                                _res.review_id.ccuscode = des.get('msg')
+                                review_ids.append(_res.review_id.id)
+                        else:
+                            _res.remark = des.get("msg")
         cr.commit()
         from ..public import ccf
         ccf = ccf.CCF()

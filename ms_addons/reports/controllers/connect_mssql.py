@@ -50,9 +50,31 @@ class Mssql:
                 'port': 1433,
                 'charset': 'utf8'
             },
+            "176": {
+                'host': '192.168.0.176',
+                'user': 'sa',
+                'password': 'Szxl2021',
+                'database': 'SEEYON2',
+                'port': 1433,
+                'charset': 'utf8'
+            },
+            "167": {
+                'host': '192.168.0.176',
+                'user': 'sa',
+                'password': 'Szxl2021',
+                'database': 'SEEYON2',
+                'port': 1433,
+                'charset': 'utf8'
+            },
         }
         self.__db = pymssql.connect(**dict_db[dbselect])
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.commit()
+        self.close()
     # 查询
     def query(self, sql, list_paramers=None, size=None):
         """

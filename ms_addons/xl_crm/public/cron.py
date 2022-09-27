@@ -209,18 +209,13 @@ class Aps:
         except Exception as e:
             print(e)
 
-    def synchronization_cus(self, res, env):
+    def synchronization_cus(self, res, env, login):
         try:
-            import requests, json
-            from .u8_login_user import U8User
+            import requests
+            import json
+            from .u8_login_user import U8Login
             desc = {'ok': False, 'msg': ''}
             headers = {'Content-Type': 'application/json; charset=utf-8'}
-            u8user = U8User()
-            login_data, login_url, url = u8user.product(res.a_company, res.code) if odoo.tools.config[
-                                                                                        "enviroment"] == 'PRODUCT' else u8user.test(
-                res.a_company, res.code)
-            login = requests.post(login_url, json.dumps(login_data),
-                                  headers=headers)
             if login.ok:
                 headers['apiToken'] = json.loads(login.text)
                 cusdeliveradd = env['xlcrm.u8_customer_deliver_add'].sudo().search_read(
@@ -251,6 +246,14 @@ class Aps:
                 for address in cusdeliveradd:
                     address.pop('id')
                     address['ccuscode'] = res['code']
+                    address['cdeliveradd'] = address['cdeliveradd'] if address['cdeliveradd'] else ''
+                    address['cenglishadd2'] = address['cenglishadd2'] if address['cenglishadd2'] else ''
+                    address['cenglishadd3'] = address['cenglishadd3'] if address['cenglishadd3'] else ''
+                    address['cenglishadd4'] = address['cenglishadd4'] if address['cenglishadd4'] else ''
+                    address['clinkperson'] = address['clinkperson'] if address['clinkperson'] else ''
+                    address['cdeliverunit'] = address['cdeliverunit'] if address['cdeliverunit'] else ''
+                trade_terms = env['xlcrm.account.cus'].sudo().search([("review_id", "=", res.review_id.id)]).trade_terms
+                reg_cash = float(res['reg_cash']) * 10000 if res['reg_cash'] else ""
                 data = {
                     "customer": {
                         "code": res['code'],
@@ -263,7 +266,7 @@ class Aps:
                         "mobile": res['mobile'],
                         "email": res['email'],
                         "ccuscreditcompany": res['code'],
-                        "credit_rank": res['credit_rank'],
+                        "ccdefine14": res['credit_rank'],
                         "credit_amount": res['credit_amount'],
                         "Credit": res['credit'],
                         "CreditDate": res['creditdate'],
@@ -290,22 +293,50 @@ class Aps:
                         "cCusMnemCode": res.ccusmnemcode,
                         "customer_authall": {
                             "customer_auth": auth_data
-                        }
+                        },
+                        "self_define8": res.cus_en_address,
+                        "self_define11": env['xlcrm.account.sales'].sudo().search([("review_id", "=",
+                                                                                    res.review_id.id)]).employees,
+                        "self_define13": reg_cash,
+                        "legal_man": res.legal_man,
+                        "dDepBeginDate": res.begin_date,
+                        "tax_reg_code": res.tax_reg_code,
+                        "iCusTaxRate": res.cus_tax_rate,
+                        "ccdefine15": res.vmi,
+                        "address": res.address,
+                        "self_define6": res.loa,
+                        "self_define10": res.name_used_before,
+                        "self_define2": res.invoicing_date,
+                        "self_define3": res.settlement_date,
+                        "ccdefine11": res.customer_class,
+                        "self_define7": res.review_id.ke_company,
+                        "self_define1": res.review_id.reconciliation_date,
+                        "self_define5": trade_terms,
+                        "ccdefine3": res.review_id.ccusabbname_en
                     }
                 }
                 # 更新支付方式
                 self.update_cus_payment(res)
+                url = U8Login.get_cus_url(res.a_company, res.code)
+                if url.split("/")[-1] == "add":
+                    data['customer']['CreatePerson'] = res.review_id.init_user.nickname
+                    # data['customer']['ccdefine3'] = res.ccdefine3
+                else:
+                    data['customer']['ModifyPerson'] = res.review_id.init_user.nickname
+                    data['customer']['ModifyDate'] = res.review_id.update_time
+                print("before requests", res.a_company, url, data)
                 cus = requests.post(url, json.dumps(data, ensure_ascii=False, cls=MyEncoder).encode("utf-8"),
                                     headers=headers)
                 resp = json.loads(cus.text)
+                print("request success", resp)
                 if resp['item']["@dsc"] == 'ok':
-
                     bank_data = env['xlcrm.u8_customer_bank'].sudo().search_read([('review_id', '=', res.review_id.id)],
                                                                                  fields=['cbank', 'cbranch',
                                                                                          'caccountnum', 'caccountname',
                                                                                          'bdefault'])
 
-                    self.update_cus_bank(res, bank_data)
+                    self.update_cus_bank(res, bank_data, url.split("/")[-1])
+                    # self.update_cus_ccdefine(res)
                     desc['ok'] = True
                     desc['msg'] = resp['item']['@u8key']
                 else:
@@ -318,7 +349,7 @@ class Aps:
             return desc
 
     @staticmethod
-    def update_cus_bank(res, bank_data):
+    def update_cus_bank(res, bank_data, category):
         desc = dict()
         from .public import u8_account_name
         try:
@@ -330,7 +361,7 @@ class Aps:
                 map(lambda item: (
                     res.code, item["cbank"], item["cbranch"], item["caccountname"], item["caccountnum"],
                     item["bdefault"]), bank_data))
-            if res.category == 'edit':
+            if category == 'edit':
                 mssql.in_up_de(
                     f"delete from {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.CustomerBank where cCusCode='{res.code}'")
 
@@ -339,6 +370,32 @@ class Aps:
                     f'insert into {u8_account_name(res.a_company, odoo.tools.config["enviroment"])}.dbo.CustomerBank(cCusCode,cBank,cBranch,cAccountName,cAccountNum,bDefault)values(%s,%s,%s,%s,%s,%s)',
                     query_bank]])
 
+            mssql.commit()
+            mssql.close()
+            desc['msg'] = 'ok'
+        except Exception as e:
+            desc['msg'] = e
+        finally:
+            return desc
+
+    @staticmethod
+    def update_cus_ccdefine(res):
+        desc = dict()
+        from .public import u8_account_name
+        try:
+            con_str = '158_999'
+            if odoo.tools.config["enviroment"] == 'PRODUCT':
+                con_str = '154_999'
+            mssql = connect_mssql.Mssql(con_str)
+            q_sql = f"select cCusCode from {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.Customer_extradefine where cCusCode='{res.code}'"
+            query_res = mssql.query(q_sql)
+            if query_res:
+                mssql.in_up_de(
+                    f"update {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.Customer_extradefine set ccdefine15='{res.vmi}' where cCusCode='{res.code}'")
+
+            else:
+                mssql.in_up_de(
+                    f"insert into {u8_account_name(res.a_company, odoo.tools.config['enviroment'])}.dbo.Customer_extradefine(cCusCode,ccdefine15)values('{res.code}','{res.vmi}')")
             mssql.commit()
             mssql.close()
             desc['msg'] = 'ok'
@@ -389,3 +446,120 @@ class Aps:
             desc['msg'] = e
         finally:
             return desc
+
+    @classmethod
+    def grab_consolidated(cls, env):
+        import requests
+        js_res = requests.get('https://api.trade.gov/static/consolidated_screening_list/consolidated.json')
+        results = json.loads(js_res.text)['results']
+        data = list(map(lambda x: {"name": x['name']}, results))
+        env['consolidated'].sudo().search([(1, '=', 1)]).unlink()
+        env['consolidated'].sudo().create(data)
+        env.cr.commit()
+
+    @classmethod
+    def suit_consolidated(cls, env):
+        from .connect_mssql import Mssql
+        import re
+        # mssql = Mssql("ErpCrmDB")
+        # sql = "select cCusCode,cCusName,cCusType,cCusMnemCode,companycode from " \
+        #       "[dbo].[v_Customer_CCF_ALL] where cCusMnemCode is not null"
+        # data = mssql.query(sql)
+        data = []
+        db_sql = "SELECT name FROM MASter..SysDatabASes  where  name  like 'UFDATA_%' and name not like 'UFDATA_999_%'"
+        con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
+        if enviroment == 'PRODUCT':
+            con_str = '154_999'
+        con_str = '154_999'
+        with Mssql(con_str) as mssql:
+            db_res = mssql.query(db_sql)
+            for db in db_res:
+                try:
+                    sql = f"""
+                            use {db[0]};
+                            select distinct c.cCusCode,c.cCusName,c.cCusMnemCode from Sales_FHD_W a
+                             left join Sales_FHD_T b on a.dlid=b.dlid  
+                             left join Customer c on a.cdefine23=c.cCusCode
+                             where(cVouchType=N'05' and (bFirst=1 or (bFirst=0 and dDate>=(select cvalue from accinformation where csysid=N'SA' and cName=N'dStartDate')))) 
+                             and ( dDate>=GETDATE()-365
+                              And (cInvDefine2 IN (N'BROADCOM',N'AVAGO',N'SYNAPTICS'))) and isnull(cchildcode,N'')=N'' and isnull(cCusMnemCode,N'')<>N''
+                        """
+                    res = mssql.query(sql)
+                    for _res in res:
+                        tmp = dict()
+                        tmp['code'] = _res[0].strip()
+                        tmp['name'] = _res[1].strip()
+                        tmp['ccusmnemcode'] = _res[2].strip()
+                        tmp['a_company'] = re.search(r"UFDATA_(.*?)_", db[0]).group(1)
+                        data.append(tmp)
+                except Exception as e:
+                    pass
+        tar = []
+        for _data in data:
+            res = env['consolidated'].sudo().search_read([('name', 'ilike', _data['ccusmnemcode'])])
+            if res:
+                tmp = list(map(lambda x: x["name"], res))
+                tar.append({"code": _data['code'], "name": _data['name'], "source": "U8档案",
+                            "a_company": _data['a_company'],
+                            "ccusmnemcode": _data['ccusmnemcode'], "result": ';'.join(tmp),
+                            "a_companycode": _data['a_company']})
+
+        env["u8.cus.consolidated"].sudo().search([('review_id', '=', False)]).unlink()
+        env["u8.cus.consolidated"].sudo().create(tar)
+        env.cr.commit()
+
+    @staticmethod
+    def update_brand_limit_to_u8(res, brand):
+        import datetime
+        if res.brand_limit == 1:
+            from . import connect_mssql
+            con_str = '154_999' if odoo.tools.config["enviroment"] == 'PRODUCT' else '158_999'
+            mssql = connect_mssql.Mssql(con_str)
+            data_insert, data_update = [], []
+            for _brand in brand:
+                res_brand = mssql.query(
+                    f"select id from EF_BrandLimit where companyCode='{res.a_companycode}' and cCusCode='{res.code}' and cBrand='{_brand['brand_name']}'")
+                if not res_brand:
+                    mssql.in_up_de(
+                        "insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
+                        f"values('{res.a_companycode}','{res.code}','{_brand['brand_name']}','{_brand['init_nickname']}','{datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d')}','{_brand['pm']}','{datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d')}')")
+                else:
+                    mssql.in_up_de(
+                        f"update EF_BrandLimit set cEditor='{_brand['init_nickname']}',cEditDate='{datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d')}',cAuditer='{_brand['pm']}',cAuditDate='{datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d')}' "
+                        f"where companyCode='{res.a_companycode}' and cCusCode='{res.code}' and cBrand='{_brand['brand_name']}'"
+                    )
+                material = _brand["material"]
+                for item in material:
+                    material = item.get('material_limit').replace('amp;', '&').replace('eq;', '=').replace('plus;',
+                                                                                                           '+').replace(
+                        'per;', '%')
+                    start_date = datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d')
+                    end_date = datetime.datetime.strftime(
+                        _brand['init_time'].replace(year=_brand['init_time'].year + 99), '%Y-%m-%d')
+                    if material:
+                        res_ma = mssql.query(f"select id from EF_InvPermit where companyCode='{res.a_companycode}'"
+                                             f" and cCusCode='{res.code}' and cInvCode='{material}'")
+                        if not res_ma:
+                            data_insert.append((res.a_companycode, res.code, material,
+                                                start_date, end_date, _brand["init_nickname"],
+                                                start_date, _brand["pm"],
+                                                datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d') if _brand[
+                                                    'init_time'] else ''))
+                        else:
+                            data_update.append((start_date, end_date, _brand["init_nickname"],
+                                                start_date, _brand["pm"],
+                                                datetime.datetime.strftime(_brand['init_time'], '%Y-%m-%d') if _brand[
+                                                    'init_time'] else '', res.a_companycode, res.code, material))
+            if data_insert:
+                mssql.batch_in_up_de(
+                    [[
+                        "insert into EF_InvPermit(companyCode,cCusCode,cInvCode,cStartDate,cEndDate,cEditor,cEditDate,cAuditer,cAuditDate)values(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                        data_insert]])
+            if data_update:
+                mssql.batch_in_up_de(
+                    [[
+                        "update EF_InvPermit set cStartDate=%s,cEndDate=%s,cEditor=%s,cEditDate=%s,cAuditer=%s,cAuditDate=%s where companyCode=%s and cCusCode=%s and cInvCode=%s ",
+                        data_update]])
+            res.status = 2
+            mssql.commit()
+            mssql.close()

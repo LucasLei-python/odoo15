@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
-import pymssql,psycopg2
+import pymssql, psycopg2
 
 
 class Mssql(object):
     def __init__(self, dbselect):
         self.__connect(dbselect)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def __connect(self, dbselect):
         dict_db = {
@@ -89,7 +95,7 @@ class Mssql(object):
                 'port': 5432
             }
         }
-        condb = psycopg2 if dbselect in ('168','161') else pymssql
+        condb = psycopg2 if dbselect in ('168', '161') else pymssql
         self.__db = condb.connect(**dict_db[dbselect])
 
     # 查询

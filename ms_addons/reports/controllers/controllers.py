@@ -2594,13 +2594,16 @@ class Reports(http.Controller):
                 period = query_filter.get('period')
                 company = query_filter.get('company')
             from .connect_mssql import Mssql
-            from .public import u8_account_name
+            from .public import u8_account_name, get_first_day
             import odoo
             con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
             if enviroment == 'PRODUCT':
                 con_str = '154_999'
             mssql = Mssql(con_str)
-            lyear, lperiod = period[:4], int(period[4:])
+            start_date = f"{period[0][:4]}-{period[0][4:]}-01"
+            end_date = datetime.datetime.strptime(f"{get_first_day(period[1][:4], period[1][4:])}-01",
+                                                  "%Y-%m-%d") - datetime.timedelta(days=1)
+            # end_date = f"{get_first_day(period[1][:4], period[1][4:])}-01"
             # 获取账套
             query_a = [" 1=1"]
             if bank:
@@ -2614,26 +2617,43 @@ class Reports(http.Controller):
             for a_company in a_companys:
                 db = u8_account_name(a_company, enviroment)
                 sql_list.append(
-                    f"select B.UnitName,B.AcctName,A.CurTypeName,isnull(C.mb,0)+sum(Debit)-sum(Credit) as yu,'{a_company}' as a_company from {db}.dbo.CN_AcctBookView A"
+                    f"select B.UnitName,B.AcctName,A.CurTypeName,isnull(C.mb,0)+sum(Debit)-sum(Credit) as yu,'{a_company}' as a_company,A.lYear,A.Period,B.csAcctNum from {db}.dbo.CN_AcctBookView A"
                     f" LEFT JOIN {db}.dbo.CN_AcctInfo B on A.AcctID=B.ID"
                     f" LEFT JOIN {db}.dbo.GL_accsum C on A.Period=C.iperiod and A.lYear=C.iyear and B.SubjectCode=C.ccode"
-                    f" where {' and '.join(query_a)} and A.lyear='{lyear}' and A.Period='{lperiod}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID"
-                    f" group by B.UnitName,B.AcctName,A.CurTypeName,C.mb")
+                    f" where {' and '.join(query_a)} and A.AcctDate between '{start_date}' and '{end_date}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID"
+                    f" group by B.UnitName,B.AcctName,A.CurTypeName,C.mb,A.lYear,A.Period,B.csAcctNum")
             res = mssql.query(' union '.join(sql_list))
             for _res in res:
                 tmp = {}
+                period = f"{_res[5]}{str(_res[6]).zfill(2)}"
                 tmp['company'] = _res[0]
                 tmp['bank'] = _res[1]
                 tmp['currency'] = _res[2]
                 tmp['balance'] = _res[3]
                 tmp['a_company'] = _res[4]
                 tmp['period'] = period
-                f_fmt = f"{period}_{tmp['a_company']}_{_res[0]}_{_res[1].replace(':', '')}"
+                tmp['bank_code'] = _res[7]
+                f_fmt = f"{period}_{tmp['a_company']}_{_res[7].replace(':', '')}"
                 filename = env['xlcrm.documents'].sudo().search(
                     [('res_model', '=', 'reports.accountStatement'), ('datas_fname', '=', f_fmt)],
                     order='write_date desc', limit=1)
-                tmp['filename'] = f"{f_fmt}.{filename.name.rsplit('.', 1)[-1]}" if filename else ''
-                tmp['file_url'] = f"{odoo.tools.config['serve_url']}/smb/file/{filename.id}" if filename else ''
+                files = []
+                if filename:
+                    files.append({
+                        "filename": f"{f_fmt}.{filename.name.rsplit('.', 1)[-1]}" if filename else '',
+                        "file_url": f"{odoo.tools.config['serve_url']}/smb/file/{filename.id}" if filename else ''
+                    })
+                filename2 = env['xlcrm.documents'].sudo().search(
+                    [('res_model', '=', 'reports.accountStatement'), ('datas_fname', '=', f_fmt),
+                     ('mimetype', '!=', filename.mimetype)],
+                    order='write_date desc', limit=1)
+                if filename2:
+                    files.append({
+                        "filename": f"{f_fmt}.{filename2.name.rsplit('.', 1)[-1]}" if filename2 else '',
+                        "file_url": f"{odoo.tools.config['serve_url']}/smb/file/{filename2.id}" if filename2 else ''
+                    })
+                tmp["files"] = files
+                tmp["filenames"] = '、'.join(list(map(lambda x: x["filename"], files)))
                 result.append(tmp)
             message = "success"
             count = len(result)
@@ -2667,11 +2687,16 @@ class Reports(http.Controller):
             from .connect_mssql import Mssql
             from .public import u8_account_name
             import odoo
+            import copy
             con_str, enviroment = '158_999', odoo.tools.config["enviroment"]
             if enviroment == 'PRODUCT':
                 con_str = '154_999'
             mssql = Mssql(con_str)
-            lyear, lperiod = period[:4], int(period[4:])
+            # lyear, lperiod = period[:4], int(period[4:])
+            start_date = f"{period[:4]}-{period[4:]}-01"
+            # end_date = f"{get_first_day(period[:4], period[4:])}-01"
+            end_date = datetime.datetime.strptime(f"{get_first_day(period[:4], period[4:])}-01",
+                                                  "%Y-%m-%d") - datetime.timedelta(days=1)
             # 获取账套
             query_a = [" 1=1"]
             if bank:
@@ -2679,9 +2704,10 @@ class Reports(http.Controller):
             if company:
                 query_a.append(f"B.Unitname='{company}'")
             db = u8_account_name(a_company, enviroment)
-            sql_ = f"select A.Period,convert(date,A.AcctDate) as AcctDate,B.UnitName,A.Summary,A.CurTypeName,A.Debit,A.Credit,A.cCusName,cVenName from {db}.dbo.CN_AcctBookView A" \
+            sql_ = f"select A.Period,convert(date,A.AcctDate) as AcctDate,B.UnitName,A.Summary,A.CurTypeName,A.Debit,A.Credit,A.cCusName,cVenName,C.mb from {db}.dbo.CN_AcctBookView A" \
                    f" LEFT JOIN {db}.dbo.CN_AcctInfo B on A.AcctID=B.ID" \
-                   f" where {' and '.join(query_a)} and A.lyear='{lyear}' and A.Period='{lperiod}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID"
+                   f" LEFT JOIN {db}.dbo.GL_accsum C on A.Period=C.iperiod and A.lYear=C.iyear and B.SubjectCode=C.ccode " \
+                   f" where {' and '.join(query_a)} and A.AcctDate between '{start_date}' and '{end_date}' and A.IsDelete<>1 AND A.AcctType<>2 AND A.ID_Old=A.ID order by A.AcctDate"
             res = mssql.query(sql_)
             for _res in res:
                 tmp = {}
@@ -2696,8 +2722,36 @@ class Reports(http.Controller):
                 tmp['credit'] = _res[6]
                 tmp['ccusname'] = _res[7]
                 tmp['cvenname'] = _res[8]
-
+                tmp['mb'] = _res[9]
                 result.append(tmp)
+            l_res = len(result)
+            mb = result[0]['mb'] if l_res > 0 and result[0]['mb'] else 0
+            for index, res in enumerate(result):
+                if index == 0:
+                    res["yu"] = mb + res['debit'] - res['credit']
+                else:
+                    res["yu"] = result[index - 1]["yu"] + res['debit'] - res['credit']
+            fin_res = copy.deepcopy(result)
+            debit, m_debit, credit, m_credit, index = 0, 0, 0, 0, 0
+            for i in range(l_res):
+                debit += result[i]["debit"]
+                credit += result[i]["credit"]
+                m_debit += result[i]["debit"]
+                m_credit += result[i]["credit"]
+                if i == l_res - 1 or result[i]["acctdate"] != result[i + 1]["acctdate"]:
+                    fin_res.insert(i + 1 + index, {"period": "", "a_company": "",
+                                                   "debit": debit, "credit": credit, "yu": result[i]["yu"],
+                                                   "bank": "", "acctdate": "日合计", "company": "",
+                                                   "summary": "", "currency": "", "ccusname": "", "cvenname": ""
+                                                   })
+                    debit, credit = 0, 0
+                    index += 1
+                if i == l_res - 1:
+                    fin_res.append({"period": "", "a_company": "",
+                                    "debit": m_debit, "credit": m_credit, "yu": result[i]["yu"],
+                                    "bank": "", "acctdate": "月合计", "company": "",
+                                    "summary": "", "currency": "", "ccusname": "", "cvenname": ""
+                                    })
             message = "success"
             count = len(result)
         except Exception as e:
@@ -2705,7 +2759,292 @@ class Reports(http.Controller):
         finally:
             env.cr.close()
 
-        rp = {'status': 200, 'message': message, 'data': result, 'total': count, 'page': offset + 1,
+        rp = {'status': 200, 'message': message, 'data': fin_res, 'total': count, 'page': offset + 1,
+              'per_page': limit}
+        return json_response(rp)
+
+    @http.route([
+        '/api/v11/reports/getExpenseList',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_expense_list(self, model=None, ids=None, **kw):
+        success, message, result, u8_expense_data, count, offset, limit = True, '', [], [], 0, 0, 25
+        token = kw.pop('token')
+        env = authenticate(token)
+        if not env:
+            return no_token()
+        try:
+            apply_name, send_time, dept_name, pay_time = '', '', '', ''
+            if kw.get("data"):
+                json_data = kw.get("data").replace('null', 'None')
+                query_filter = ast.literal_eval(json_data)
+                apply_name = query_filter.get('apply_name')
+                send_time = query_filter.get('send_time')
+                dept_name = query_filter.get('dept_name')
+                pay_time = query_filter.get('pay_time')
+            from .connect_mssql import Mssql
+            from .public import u8_account_name
+            import odoo
+            import copy
+            con_str, enviroment = '176', odoo.tools.config["enviroment"]
+            if enviroment == 'PRODUCT':
+                con_str = '167'
+            condition_date,condition_dept = '',''
+            if apply_name:
+                condition_dept += f" and member.NAME='{apply_name}'"
+            if dept_name:
+                condition_dept += f" and orgunit.Name='{dept_name}'"
+            if send_time:
+                condition_date += f" and applyDate between '{send_time[0]}' and '{send_time[-1]}'"
+            if pay_time:
+                start_date = f"{pay_time[0][:4]}-{pay_time[0][4:]}-01"
+                end_date = f"{get_first_day(pay_time[1][:4], pay_time[1][4:])}-01"
+                condition_date += f" and paymentDate between '{start_date}' and '{end_date}'"
+            mssql = Mssql(con_str)
+            sql = f'''
+            SELECT  member.Name as applyName,max(orgunit.Name) as depName,
+            sum(CASE enumitem.SHOWVALUE WHEN '差旅费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_0,
+            sum(CASE enumitem.SHOWVALUE WHEN '招待费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_1,
+            sum(CASE enumitem.SHOWVALUE WHEN '办公费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_2,
+            sum(CASE enumitem.SHOWVALUE WHEN '房租水电' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_3,
+            sum(CASE enumitem.SHOWVALUE WHEN '网络费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_4,
+            sum(CASE enumitem.SHOWVALUE WHEN '运输费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_5,
+            sum(CASE enumitem.SHOWVALUE WHEN '保险费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_6,
+            sum(CASE enumitem.SHOWVALUE WHEN '仓储费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_7,
+            sum(CASE enumitem.SHOWVALUE WHEN '包装费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_8,
+            sum(CASE enumitem.SHOWVALUE WHEN '装修费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_9,
+            sum(CASE enumitem.SHOWVALUE WHEN '长期待摊费用' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_10,
+            sum(CASE enumitem.SHOWVALUE WHEN '固定资产' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_11,
+            sum(CASE enumitem.SHOWVALUE WHEN '诉讼费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_12,
+            sum(CASE enumitem.SHOWVALUE WHEN '审计费 咨询费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_13,
+            sum(CASE enumitem.SHOWVALUE WHEN '律师代理费 顾问费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_14,
+            sum(CASE enumitem.SHOWVALUE WHEN '业务宣传费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_15,
+            sum(CASE enumitem.SHOWVALUE WHEN '代理手续费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_16,
+            sum(CASE enumitem.SHOWVALUE WHEN '服务费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_17,
+            sum(CASE enumitem.SHOWVALUE WHEN '报关手续费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_18,
+            sum(CASE enumitem.SHOWVALUE WHEN '软件服务费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_19,
+            sum(CASE enumitem.SHOWVALUE WHEN '商业保险' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_20,
+            sum(CASE enumitem.SHOWVALUE WHEN '福利费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_21,
+            sum(CASE enumitem.SHOWVALUE WHEN '委托研发' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_22,
+            sum(CASE enumitem.SHOWVALUE WHEN '设计费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_23,
+            sum(CASE enumitem.SHOWVALUE WHEN '加工费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_24,
+            sum(CASE enumitem.SHOWVALUE WHEN '专利费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_25,
+            sum(CASE enumitem.SHOWVALUE WHEN '会务费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_26,
+            sum(CASE enumitem.SHOWVALUE WHEN '修理费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_27,
+            sum(CASE enumitem.SHOWVALUE WHEN '低值易耗品' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_28,
+            sum(CASE enumitem.SHOWVALUE WHEN '车船使用税' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_29,
+            sum(CASE enumitem.SHOWVALUE WHEN '职工福利费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_30,
+            sum(CASE enumitem.SHOWVALUE WHEN '检测费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_31,
+            sum(CASE enumitem.SHOWVALUE WHEN '社会保费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_32,
+            sum(CASE enumitem.SHOWVALUE WHEN '住房公积金' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_33,
+            sum(CASE enumitem.SHOWVALUE WHEN '银行账户内转/公司间往来款' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_34,
+            sum(CASE enumitem.SHOWVALUE WHEN '技术服务费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_35,
+            sum(CASE enumitem.SHOWVALUE WHEN '银行存款' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_36,
+            sum(CASE enumitem.SHOWVALUE WHEN '长期股权投资' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_37,
+            sum(CASE enumitem.SHOWVALUE WHEN '律师费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_38,
+            sum(CASE enumitem.SHOWVALUE WHEN '审计费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_39,
+            sum(CASE enumitem.SHOWVALUE WHEN '审计' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_40,
+            sum(CASE enumitem.SHOWVALUE WHEN '咨询费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_41,
+            sum(CASE enumitem.SHOWVALUE WHEN '上市中介机构服务费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_42,
+            sum(CASE enumitem.SHOWVALUE WHEN '装备调试费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_43,
+            sum(CASE enumitem.SHOWVALUE WHEN '交通费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_44,
+            sum(CASE enumitem.SHOWVALUE WHEN '汽车费用' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_45,
+            sum(CASE enumitem.SHOWVALUE WHEN '电话费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_46,
+            sum(CASE enumitem.SHOWVALUE WHEN '快递费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_47,
+            sum(CASE enumitem.SHOWVALUE WHEN '物料消耗' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_48,
+            sum(CASE enumitem.SHOWVALUE WHEN '劳动保护费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_49,
+            sum(CASE enumitem.SHOWVALUE WHEN '职工教育经费' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_50,
+            sum(CASE enumitem.SHOWVALUE WHEN '职工薪酬' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_51,
+            sum(CASE enumitem.SHOWVALUE WHEN '社会保险' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_52,
+            sum(CASE enumitem.SHOWVALUE WHEN '非关联' THEN cast(costAmount AS decimal(10,2)) ELSE 0.00 END) costtype_53,
+             isnull(sum(cast(costAmount AS decimal(10,2))),0.00) as costtype_54
+            FROM (
+            SELECT
+                main52.field0002 AS applicant,
+                main52.field0080 AS department,
+                main52.field0003 AS applyDate,
+                main52.field0087 AS paymentDate,
+                son53.field0012 AS costType,
+                son53.field0014 AS costAmount	
+            FROM
+                formmain_0104 main52
+                LEFT JOIN formson_0105 son53 ON son53.formmain_id = main52.ID	
+                where main52.finishedflag=1 
+                {condition_date.replace('applyDate','main52.field0003').replace('paymentDate','main52.field0087')}
+            UNION ALL SELECT
+                main56.field0002 AS applicant,
+                main56.field0068 AS department,
+                main56.field0004 AS applyDate,
+                main56.field0089 AS paymentDate,
+                son57.field0012 AS costType,
+                son57.field0018 AS costAmount	
+            FROM
+                formmain_0100 main56
+                LEFT JOIN formson_0101 son57 ON son57.formmain_id = main56.ID	
+                where main56.finishedflag=1 
+                {condition_date.replace('applyDate','main56.field0004').replace('paymentDate','main56.field0089')}
+             UNION ALL SELECT
+                main60.field0002 AS applicant,
+                main60.field0062 AS department,
+                main60.field0004 AS applyDate,
+                main60.field0111 AS paymentDate,
+                son61.field0058 AS costType,
+                son61.field0024 AS costAmount	
+            FROM
+                formmain_0108 main60
+                LEFT JOIN formson_0109 son61 ON son61.formmain_id = main60.ID 	
+                where main60.finishedflag=1  
+                {condition_date.replace('applyDate','main60.field0004').replace('paymentDate','main60.field0111')}
+             UNION ALL SELECT
+                main64.field0002 AS applicant,
+                main64.field0115 AS department,
+                main64.field0004 AS applyDate,
+                main64.field0057 AS paymentDate,
+                son65.field0014 AS costType,
+                son65.field0017 AS costAmount	
+            FROM
+                formmain_0113 main64
+                LEFT JOIN formson_0114 son65 ON son65.formmain_id = main64.ID	
+                where main64.finishedflag=1 
+                {condition_date.replace('applyDate','main64.field0004').replace('paymentDate','main64.field0057')}
+             ) a 
+             LEFT JOIN ORG_MEMBER member ON member.ID = a.applicant
+             LEFT JOIN ORG_UNIT orgunit ON orgunit.ID = a.department
+             LEFT JOIN ctp_enum_item enumitem ON enumitem.ID = a.costType
+             where enumitem.SHOWVALUE not in ('其他应付款','在建工程','无形资产','安防监控费(HK)','E-FAX(HK)','应交所得税(HK)','董事报酬(HK)','强积金(HK)','业务费(HK)','运输费HK','仓储费HK') 
+             {condition_dept}
+             GROUP BY member.NAME,orgunit.sort_id
+             order by orgunit.sort_id asc
+            '''
+            message = "success"
+            res = mssql.query(sql)
+            for _res in res:
+                temp = dict()
+                temp['applyName'] = _res[0]
+                temp['depName'] = _res[1]
+                for i in range(55):
+                    temp[f"costtype_{i}"] = _res[2 + i]
+                result.append(temp)
+            start_period = ''.join(pay_time[0].split('-')[:2])
+            end_period = ''.join(pay_time[1].split('-')[:2])
+            u8_expense_data = get_u8_expense(start_period, end_period)
+
+            count = len(result)
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': result,'u8_expense':u8_expense_data, 'total': count, 'page': offset + 1,
+              'per_page': limit}
+        return json_response(rp)
+
+    @http.route([
+        '/api/v11/reports/getExpenseDetail',
+    ], auth='none', type='http', csrf=False, methods=['GET'])
+    def get_expense_detail(self, model=None, ids=None, **kw):
+        success, message, result, u8_expense_data, count, offset, limit = True, '', [], [], 0, 0, 25
+        token = kw.pop('token')
+        env = authenticate(token)
+        if not env:
+            return no_token()
+        try:
+            apply_name, send_time, dept_name, pay_time,cost_type = '','', '', '', ''
+            if kw.get("data"):
+                json_data = kw.get("data").replace('null', 'None')
+                query_filter = ast.literal_eval(json_data)
+                apply_name = query_filter.get('apply_name')
+                dept_name = query_filter.get('dept_name')
+                cost_type = query_filter.get('cost_type')
+            from .connect_mssql import Mssql
+            from .public import u8_account_name
+            import odoo
+            import copy
+            con_str, enviroment = '176', odoo.tools.config["enviroment"]
+            if enviroment == 'PRODUCT':
+                con_str = '167'
+            condition_date,condition_dept = '',''
+            if cost_type:
+                condition_dept += f" and enumitem.SHOWVALUE='{cost_type}'"
+            if apply_name:
+                condition_dept += f" and member.NAME='{apply_name}'"
+            if dept_name:
+                condition_dept += f" and orgunit.Name='{dept_name}'"
+            mssql = Mssql(con_str)
+            sql = f'''
+                SELECT  member.Name as applyName,orgunit.Name as depName,
+                a.applyDate,a.paymentDate,enumitem.SHOWVALUE as costType,a.costAmount
+                FROM (
+                SELECT
+                    main52.field0002 AS applicant,
+                    main52.field0080 AS department,
+                    main52.field0003 AS applyDate,
+                    main52.field0087 AS paymentDate,
+                    son53.field0012 AS costType,
+                    son53.field0014 AS costAmount	
+                FROM
+                    formmain_0104 main52
+                    LEFT JOIN formson_0105 son53 ON son53.formmain_id = main52.ID	
+                    where main52.finishedflag=1                     
+                UNION ALL SELECT
+                    main56.field0002 AS applicant,
+                    main56.field0068 AS department,
+                    main56.field0004 AS applyDate,
+                    main56.field0089 AS paymentDate,
+                    son57.field0012 AS costType,
+                    son57.field0018 AS costAmount	
+                FROM
+                    formmain_0100 main56
+                    LEFT JOIN formson_0101 son57 ON son57.formmain_id = main56.ID	
+                    where main56.finishedflag=1
+                 UNION ALL SELECT
+                    main60.field0002 AS applicant,
+                    main60.field0062 AS department,
+                    main60.field0004 AS applyDate,
+                    main60.field0111 AS paymentDate,
+                    son61.field0058 AS costType,
+                    son61.field0024 AS costAmount	
+                FROM
+                    formmain_0108 main60
+                    LEFT JOIN formson_0109 son61 ON son61.formmain_id = main60.ID 	
+                    where main60.finishedflag=1
+                 UNION ALL SELECT
+                    main64.field0002 AS applicant,
+                    main64.field0115 AS department,
+                    main64.field0004 AS applyDate,
+                    main64.field0057 AS paymentDate,
+                    son65.field0014 AS costType,
+                    son65.field0017 AS costAmount	
+                FROM
+                    formmain_0113 main64
+                    LEFT JOIN formson_0114 son65 ON son65.formmain_id = main64.ID	
+                    where main64.finishedflag=1
+                 ) a 
+                 LEFT JOIN ORG_MEMBER member ON member.ID = a.applicant
+                 LEFT JOIN ORG_UNIT orgunit ON orgunit.ID = a.department
+                 LEFT JOIN ctp_enum_item enumitem ON enumitem.ID = a.costType
+                 where enumitem.SHOWVALUE not in ('其他应付款','在建工程','无形资产','安防监控费(HK)','E-FAX(HK)','应交所得税(HK)','董事报酬(HK)','强积金(HK)','业务费(HK)','运输费HK','仓储费HK') 
+                 {condition_dept}
+                 order by orgunit.sort_id asc
+                '''
+            message = "success"
+            res = mssql.query(sql)
+            for _res in res:
+                temp = dict()
+                temp['applyName'] = _res[0]
+                temp['depName'] = _res[1]
+                temp['applyDate'] = _res[2]
+                temp['paymentDate'] = _res[3]
+                temp['costType'] = _res[4]
+                temp['costAmount'] = _res[5]
+                result.append(temp)
+            count = len(result)
+        except Exception as e:
+            result, success, message = '', False, str(e)
+        finally:
+            env.cr.close()
+
+        rp = {'status': 200, 'message': message, 'data': result, 'u8_expense': u8_expense_data, 'total': count,
+              'page': offset + 1,
               'per_page': limit}
         return json_response(rp)
 
@@ -2713,7 +3052,7 @@ class Reports(http.Controller):
         '/api/v11/upload/accountStatement'
     ], auth='none', type='http', csrf=False, methods=['POST', 'OPTIONS'])
     def upload_addfile_account_statement(self, success=False, message='', ret_data='', file='', **kw):
-        filename, file_url = None, None
+        files = list()
         if file:
             filename = file.filename
             token = kw.pop('token')
@@ -2723,7 +3062,8 @@ class Reports(http.Controller):
                 return no_token()
             try:
                 from .public import save_file
-                success, url, name, message = save_file(env.uid, file, 'CRM', f"accountStatement/{tools.config['enviroment']}")
+                success, url, name, message = save_file(env.uid, file, 'CRM',
+                                                        f"accountStatement/{tools.config['enviroment']}")
                 if not success:
                     rp = {'status': 200, 'data': [], 'success': success, 'message': message}
                     return json_response(rp)
@@ -2734,16 +3074,28 @@ class Reports(http.Controller):
                              'create_user_id': env.uid,
                              'file_size': size,
                              'type': 'url',
-                             'url': url.replace("/","\\")}
-                file_id = env['xlcrm.documents'].sudo().create(file_data).id
-                file_url = f"{odoo.tools.config['serve_url']}/smb/file/{file_id}"
+                             'url': url.replace("/", "\\")}
+                file1 = env['xlcrm.documents'].sudo().create(file_data)
+                files.append({
+                    "filename": filename,
+                    "file_url": f"{odoo.tools.config['serve_url']}/smb/file/{file1.id}"
+                })
+                filename2 = env['xlcrm.documents'].sudo().search(
+                    [('res_model', '=', 'reports.accountStatement'), ('datas_fname', '=', file1.datas_fname),
+                     ('mimetype', '!=', file1.mimetype)],
+                    order='write_date desc', limit=1)
+                if filename2:
+                    files.append({
+                        "filename": f"{filename2.datas_fname}.{filename2.name.rsplit('.', 1)[-1]}",
+                        "file_url": f"{odoo.tools.config['serve_url']}/smb/file/{filename2.id}"
+                    })
                 env.cr.commit()
                 success = True
             except Exception as e:
                 ret_data, success, message = '', False, str(e)
             finally:
                 env.cr.close()
-        rp = {'status': 200, 'filename': filename, 'file_url': file_url, 'success': success, 'message': message}
+        rp = {'status': 200, 'files': files, 'success': success, 'message': message}
         return json_response(rp)
 
     @http.route(['/smb/file/<int:id>'], csrf=False, type='http', auth="public", cors='*')

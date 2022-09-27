@@ -39,4 +39,24 @@
 <field name="numbercall">-1</field>
 <field name="doall" eval="True" />
 </record>
+        <record model="ir.cron" id="grab_consolidated_from_USA">
+<field name="name">Grab Consolidated From USA</field>
+<field name="model_id" ref="model_xlcrm_account"/>
+<field name="state">code</field>
+<field name="code">model.get_consolidated()</field>
+<field name='interval_number'>12</field>
+<field name='interval_type'>weeks</field>
+<field name="numbercall">-1</field>
+<field name="doall" eval="True" />
+</record>
+        <record model="ir.cron" id="syn_brand_limit">
+<field name="name">Syn Brand Limit To U8</field>
+<field name="model_id" ref="model_u8_cus_consolidated"/>
+<field name="state">code</field>
+<field name="code">model.syn_brand_limit()</field>
+<field name='interval_number'>1</field>
+<field name='interval_type'>days</field>
+<field name="numbercall">-1</field>
+<field name="doall" eval="True" />
+</record>
 </odoo>

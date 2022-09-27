@@ -268,7 +268,7 @@ class CCF(BaseInfo):
         else:
             error_msg = '请联系系统管理员设置法务，财务，风控用户组'
             return lg, fd, fdm, risk_m, error_msg
-        lg,risk_m = lg_signer,risk_signer_m
+        lg, risk_m = lg_signer, risk_signer_m
         return lg, fd, fdm, risk_m, error_msg
 
     def __create_signer(self, review_id, signers, products, pm_inspector_brand_names, env):
@@ -1130,6 +1130,8 @@ class CCF(BaseInfo):
     def get_cus_data(self, review_id, env):
         res_ = dict()
         res_cus = env['xlcrm.u8_customer'].sudo().search([('review_id', '=', review_id), ('a_company', '!=', '999')])
+        res_['deliver_add'] = []
+        res_['bank'] = []
         if res_cus:
             res_['super_dept'] = res_cus.super_dept
             res_['sort_code'] = res_cus.sort_code
@@ -1148,6 +1150,19 @@ class CCF(BaseInfo):
             res_['credit_amount'] = res_cus.credit_amount
             res_['credit'] = res_cus.credit
             res_['creditdate'] = res_cus.creditdate
+            res_['reg_cash'] = res_cus.reg_cash
+            res_['legal_man'] = res_cus.legal_man
+            res_['begin_date'] = res_cus.begin_date
+            res_['tax_reg_code'] = res_cus.tax_reg_code
+            res_['cus_tax_rate'] = res_cus.cus_tax_rate
+            res_['vmi'] = res_cus.vmi
+            res_['ccdefine2'] = res_cus.ccdefine2
+            res_['address'] = res_cus.address
+            res_['loa'] = res_cus.loa
+            res_['name_used_before'] = res_cus.name_used_before
+            res_['invoicing_date'] = res_cus.invoicing_date
+            res_['settlement_date'] = res_cus.settlement_date
+            res_['customer_class'] = res_cus.customer_class
             authdimen = env['xlcrm.u8_customer_authdimen'].sudo().search_read([('cus', '=', res_cus.id)],
                                                                               fields=['cadcode', 'cadname'])
             res_['authdimen'] = list(map(lambda x: f"{x['cadcode']}-{x['cadname']}", authdimen)) if authdimen else []
@@ -1248,6 +1263,8 @@ class CCF(BaseInfo):
             "ccusmnemcode": obj_temp["ccusmnemcode"] if obj_temp["ccusmnemcode"] else '',
             "ke_company": obj_temp["ke_company"],
             "kw_address": obj_temp["kw_address"],
+            "ke_address": obj_temp["ke_address"],
+            "ccusabbname_en": obj_temp["ccusabbname_en"],
             "registered_address": obj_temp["registered_address"],
             "kf_address": obj_temp["kf_address"],
             "krc_company": obj_temp["krc_company"],
@@ -1480,7 +1497,8 @@ class CCF(BaseInfo):
             products = eval(res['products']) if res['products'] else []
             data = []
             from . import connect_mssql
-            mssql = connect_mssql.Mssql('sales_')
+            con_str = '154_999' if odoo.tools.config["enviroment"] == 'PRODUCT' else '158_999'
+            mssql = connect_mssql.Mssql(con_str)
             mssql.in_up_de(
                 "delete from ccf_brandnamed where companycode='%s' and ccuscode='%s'" % (companycode, ccuscode))
             for item in products:
@@ -1502,7 +1520,21 @@ class CCF(BaseInfo):
             print('=======', e)
 
     @staticmethod
-    def insert_brandlimit_toU8(review_id, env):
+    def insert_cus_consolidated(res, env, company_code):
+        suit_res = env['consolidated'].sudo().search_read([('name', 'ilike', res.ccusmnemcode)])
+        if suit_res:
+            tmp = list(map(lambda x: x["name"], suit_res))
+            tar = {"code": res.ccuscode, "name": res.kc_company, "source": "在建CCF",
+                   "a_company": res.a_company, "review_id": res.id, "a_companycode": company_code,
+                   "ccusmnemcode": res.ccusmnemcode, "result": ';'.join(tmp)}
+            cus_con_id = env["u8.cus.consolidated"].sudo().create(tar).id
+            # brandnames = list(
+            #     map(lambda x: {"cus_con_id": cus_con_id, "brand_name": x["brandname"], "pm": x["PM"]},
+            #         eval(res.products)))
+            # env["u8.cus.consolidated.brand"].sudo().create(brandnames)
+            env.cr.commit()
+
+    def insert_brandlimit_toU8(self, review_id, env):
         res = env['xlcrm.account'].sudo().browse(review_id)
         doc = env['xlcrm.documents'].sudo().search(
             [('res_id', '=', review_id), ('res_model', '=', 'xlcrm.account'), ('description', '!=', '')])
@@ -1510,25 +1542,35 @@ class CCF(BaseInfo):
         company_res = env['xlcrm.user.ccfnotice'].sudo().search([('a_company', '=', res.a_company)],
                                                                 order='write_date desc')
         if ccuscode and company_res and res.status_id == 3:
+            # 写入采购确认表
+            self.insert_cus_consolidated(res, env, company_res[0].a_companycode)
             editor = res.init_user.nickname
             editdate = res.update_time
             pm_res = env['xlcrm.account.pm'].sudo().search([('review_id', '=', res['id'])])
             for p_res in pm_res:
                 if p_res and pm_res.compliance == '是':
-                    from . import connect_mssql
                     brand_name, init_user, init_time = p_res.brandname.split('_index')[0].replace('amp;', '&').replace(
                         'eq;', '=').replace('plus;', '+').replace('per;',
                                                                   '%'), p_res.init_user.nickname, p_res.init_time
                     auditer, auditdate = init_user if doc else '', datetime.datetime.strftime(doc[0].write_date,
                                                                                               '%Y-%m-%d') if doc else ''
+                    from . import connect_mssql
                     con_str = '154_999' if odoo.tools.config["enviroment"] == 'PRODUCT' else '158_999'
                     mssql = connect_mssql.Mssql(con_str)
-                    data = []
-                    mssql.in_up_de(
-                        f"delete from EF_BrandLimit where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'")
-                    mssql.in_up_de(
-                        "insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
-                        f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
+                    data_insert, data_update = [], []
+                    # mssql.in_up_de(
+                    #     f"delete from EF_BrandLimit where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'")
+                    res_brand = mssql.query(
+                        f"select id from EF_BrandLimit where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'")
+                    if not res_brand:
+                        mssql.in_up_de(
+                            "insert into EF_BrandLimit(companyCode,cCusCode,cBrand,cEditor,cEditDate,cAuditer,cAuditDate)"
+                            f"values('{company_res[0].a_companycode}','{ccuscode}','{brand_name}','{editor}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}','{init_user}','{datetime.datetime.strftime(editdate, '%Y-%m-%d')}')")
+                    else:
+                        mssql.in_up_de(
+                            f"update EF_BrandLimit set cEditor='{editor}',cEditDate='{datetime.datetime.strftime(editdate, '%Y-%m-%d')}',cAuditer='{init_user}',cAuditDate='{datetime.datetime.strftime(editdate, '%Y-%m-%d')}' "
+                            f"where companyCode='{company_res[0].a_companycode}' and cCusCode='{ccuscode}' and cBrand='{brand_name}'"
+                        )
                     if p_res.compliance_material == '是':
                         material = env['xlcrm.material.profit'].sudo().search_read(
                             [('pm_id', '=', p_res.id), ('compliance', '=', '是')], fields=['material', 'init_time'])
@@ -1542,16 +1584,33 @@ class CCF(BaseInfo):
                             auditer, auditdate = auditer if doc_material else '', doc_material[
                                 0].write_date if doc_material else ''
                             if material:
-                                data.append((company_res[0].a_companycode, ccuscode, material,
-                                             start_date, end_date, editor,
-                                             start_date, auditer,
-                                             datetime.datetime.strftime(auditdate, '%Y-%m-%d') if auditdate else ''))
+                                res_ma = mssql.query(
+                                    f"select id from EF_InvPermit where companyCode='{company_res[0].a_companycode}'"
+                                    f" and cCusCode='{ccuscode}' and cInvCode='{material}'")
+                                if not res_ma:
+                                    data_insert.append((company_res[0].a_companycode, ccuscode, material,
+                                                        start_date, end_date, editor,
+                                                        start_date, auditer,
+                                                        datetime.datetime.strftime(auditdate,
+                                                                                   '%Y-%m-%d') if auditdate else ''))
+                                elif auditdate:
+                                    data_update.append((start_date, end_date, editor,
+                                                        start_date, auditer,
+                                                        datetime.datetime.strftime(auditdate,
+                                                                                   '%Y-%m-%d') if auditdate else '',
+                                                        company_res[0].a_companycode, ccuscode, material))
 
-                    mssql.batch_in_up_de(
-                        [["delete from EF_InvPermit where companyCode=%s and cCusCode=%s and cInvCode=%s",
-                          list(map(lambda x: (x[0], x[1], x[2]), data))], [
-                             "insert into EF_InvPermit(companyCode,cCusCode,cInvCode,cStartDate,cEndDate,cEditor,cEditDate,cAuditer,cAuditDate)values(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                             data]])
+                    if data_insert:
+                        mssql.batch_in_up_de(
+                            [[
+                                 "insert into EF_InvPermit(companyCode,cCusCode,cInvCode,cStartDate,cEndDate,cEditor,cEditDate,cAuditer,cAuditDate)values(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                                 data_insert]])
+                    if data_update:
+                        mssql.batch_in_up_de(
+                            [[
+                                 "update EF_InvPermit set cStartDate=%s,cEndDate=%s,cEditor=%s,cEditDate=%s,cAuditer=%s,cAuditDate=%s where companyCode=%s and cCusCode=%s and cInvCode=%s ",
+                                 data_update]])
+
                     mssql.commit()
                     mssql.close()
 
@@ -1574,9 +1633,12 @@ class CCF(BaseInfo):
             cus['ccusexch_name'] = data['currency']
             cus['ccussaprotocol'] = data['protocol_code']
             cus['ccusmnemcode'] = data.get('ccusmnemcode')
+            cus['cus_en_address'] = data.get('ke_address')
+            # cus['ccdefine3'] = data.get('ccusabbname_en')
+            # cus['reg_cash'] = f"{float(data.get('cs').get('registered_capital')) * 10000 if data['unit'] == '万' and data.get('cs').get('registered_capital') else data.get('cs').get('registered_capital')}"
             cus['payment'] = self.get_payment(data)
             cus[
-                'credit_amount'] = f"{float(data['credit_limit']) * 10000 if data['unit'] == '万' and data['credit_limit'] else data['credit_limit']}"
+                'credit_amount'] = f"{float(data['u8_credit_limit']) * 10000 if data['unit'] == '万' and data['u8_credit_limit'] else data['u8_credit_limit']}"
             authdimen = cus.pop('authdimen', [])
             deliver_add = cus.pop('deliver_add', [])
             bank = cus.pop('bank', '')
@@ -1606,7 +1668,7 @@ class CCF(BaseInfo):
 
     @staticmethod
     def get_payment(_res):
-        payment = _res.get("payment_method_apply_new","").replace('amp;', '&').replace('eq;', '='). \
+        payment = _res.get("payment_method_apply_new", "").replace('amp;', '&').replace('eq;', '='). \
             replace('plus;', '+').replace('per;', '%')
         if payment == '电汇':
             payment = f"{_res['wire_apply_per']}%{_res['wire_apply_type']}{_res['wire_apply_days']}天"
