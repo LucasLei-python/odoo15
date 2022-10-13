@@ -2616,6 +2616,8 @@ class Reports(http.Controller):
             sql_list = []
             for a_company in a_companys:
                 db = u8_account_name(a_company, enviroment)
+                if "Unitname" in query_a[-1]:
+                    query_a.pop()
                 sql_list.append(
                     f"select B.UnitName,B.AcctName,A.CurTypeName,isnull(C.mb,0)+sum(Debit)-sum(Credit) as yu,'{a_company}' as a_company,A.lYear,A.Period,B.csAcctNum from {db}.dbo.CN_AcctBookView A"
                     f" LEFT JOIN {db}.dbo.CN_AcctInfo B on A.AcctID=B.ID"

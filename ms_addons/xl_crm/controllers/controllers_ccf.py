@@ -1158,7 +1158,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
             sql_cus = f"select cCusMnemCode,cCusPhone,cCusPerson,cCusHand,cCusEmail,b.ccdefine14,cCCCode,bCredit,bCreditDate" \
                       f",cCusDefine4,b.ccdefine2,cCusDefine9,iCusCreLine,c.cSSCode+'-'+c.cSSName as ccussscode,cCusDefine8,iEmployeeNum,cRegCash," \
                       f"cCusLPerson,dDepBeginDate,cCusRegCode,b.ccdefine3,a.iCusTaxRate,a.cCusAddress,a.cCusDefine6,a.cCusDefine10,a.cCusDefine2," \
-                      f"a.cCusDefine3,b.ccdefine11,a.cCusDefine1,a.cCusDefine5,a.cCusDefine7 from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
+                      f"a.cCusDefine3,b.ccdefine11,a.cCusDefine1,a.cCusDefine5,a.cCusDefine7,a.dCusDevDate from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
                       f" left join {database}.dbo.SettleStyle c on a.ccussscode=c.cSSCode where a.cCusCode='{cuscode}' "
             res_cus = mssql.query(sql_cus)
             sql_dimen = f"select b.cADCode+'-'+b.cADName as dimen from {database}.dbo.Customer_Auth a left join {database}.dbo.AA_AuthDimen_Sub b on a.Privilege_ID=b.cADCode " \
@@ -1223,6 +1223,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 'reconciliation_date': res_cus[0][28],
                 'trade_terms': res_cus[0][29],
                 'ke_company': res_cus[0][30],
+                'seed_date':res_cus[0][31]
             }
         except Exception as e:
             success, message = False, str(e)

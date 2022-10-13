@@ -71,11 +71,12 @@ class XlCrmExtend(http.Controller, Base):
 
     @http.route([
         '/api/v11/getOverdue',
-    ], auth='none', type='http', csrf=False, methods=['GET'])
+    ], auth='none', type='http', csrf=False, methods=['GET','POST'])
     def get_overdue(self, model=None, success=True, message='', **kw):
         success, message, re_overdue, overdue, overdue_arrears, re_overdue_arrears = True, '', [], [], '无', '无'
         token = kw.pop('token')
-        data = self.literal_eval(kw.get('data'))
+        data = self.literal_eval(
+            list(kw.keys())[0].replace('null', '""')).get("data")
         public = p.Public()
         env = self.authenticate(token)
         if not env:
@@ -114,11 +115,12 @@ class XlCrmExtend(http.Controller, Base):
 
     @http.route([
         '/api/v11/getPayment',
-    ], auth='none', type='http', csrf=False, methods=['GET'])
+    ], auth='none', type='http', csrf=False, methods=['GET','POST'])
     def get_payment(self, model=None, success=True, message='', **kw):
         success, message, re_payment, payment, overdue_payment, re_overdue_payment = True, '', [], [], '无', '无'
         token = kw.pop('token')
-        data = self.literal_eval(kw.get('data'))
+        data = self.literal_eval(
+            list(kw.keys())[0].replace('null', '""')).get("data")
         public = p.Public()
         env = self.authenticate(token)
         if not env:

@@ -288,7 +288,6 @@ class Aps:
                             'per;', '%'),
                         "ccussscode": res["ccussscode"].split('-')[0],
                         "ccusexch_name": res['ccusexch_name'],
-                        "seed_date": res.review_id.update_time,
                         "InvoiceCompany": res.code,
                         "cCusMnemCode": res.ccusmnemcode,
                         "customer_authall": {
@@ -312,7 +311,8 @@ class Aps:
                         "self_define7": res.review_id.ke_company,
                         "self_define1": res.review_id.reconciliation_date,
                         "self_define5": trade_terms,
-                        "ccdefine3": res.review_id.ccusabbname_en
+                        "ccdefine3": res.review_id.ccusabbname_en,
+                        "seed_date":res.review_id.update_time
                     }
                 }
                 # 更新支付方式
@@ -322,6 +322,7 @@ class Aps:
                     data['customer']['CreatePerson'] = res.review_id.init_user.nickname
                     # data['customer']['ccdefine3'] = res.ccdefine3
                 else:
+                    data['customer']['seed_date'] = res.seed_date
                     data['customer']['ModifyPerson'] = res.review_id.init_user.nickname
                     data['customer']['ModifyDate'] = res.review_id.update_time
                 print("before requests", res.a_company, url, data)
