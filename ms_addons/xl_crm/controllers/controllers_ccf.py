@@ -1158,7 +1158,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
             sql_cus = f"select cCusMnemCode,cCusPhone,cCusPerson,cCusHand,cCusEmail,b.ccdefine14,cCCCode,bCredit,bCreditDate" \
                       f",cCusDefine4,b.ccdefine2,cCusDefine9,iCusCreLine,c.cSSCode+'-'+c.cSSName as ccussscode,cCusDefine8,iEmployeeNum,cRegCash," \
                       f"cCusLPerson,dDepBeginDate,cCusRegCode,b.ccdefine3,a.iCusTaxRate,a.cCusAddress,a.cCusDefine6,a.cCusDefine10,a.cCusDefine2," \
-                      f"a.cCusDefine3,b.ccdefine11,a.cCusDefine1,a.cCusDefine5,a.cCusDefine7,a.dCusDevDate from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
+                      f"a.cCusDefine3,b.ccdefine11,a.cCusDefine1,a.cCusDefine5,a.cCusDefine7,a.dCusDevDate,b.ccdefine7 from {database}.dbo.Customer a left join {database}.dbo.Customer_extradefine b on a.cCusCode=b.cCusCode" \
                       f" left join {database}.dbo.SettleStyle c on a.ccussscode=c.cSSCode where a.cCusCode='{cuscode}' "
             res_cus = mssql.query(sql_cus)
             sql_dimen = f"select b.cADCode+'-'+b.cADName as dimen from {database}.dbo.Customer_Auth a left join {database}.dbo.AA_AuthDimen_Sub b on a.Privilege_ID=b.cADCode " \
@@ -1223,7 +1223,8 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 'reconciliation_date': res_cus[0][28],
                 'trade_terms': res_cus[0][29],
                 'ke_company': res_cus[0][30],
-                'seed_date':res_cus[0][31]
+                'seed_date':res_cus[0][31],
+                'ke_address':res_cus[0][32]
             }
         except Exception as e:
             success, message = False, str(e)
@@ -1247,7 +1248,7 @@ class XlCrmCCF(http.Controller, Base, CCF):
                 con_str = '154_999'
             mssql = connect_mssql.Mssql(con_str)
             database = public.u8_account_name(a_company, odoo.tools.config['enviroment'])
-            sql_cus = f"select cContactCode,cContactName,cMobilePhone,cOfficePhone,cMemo from {database}.dbo.Crm_Contact where cCusCode='{cuscode}' or (cCusCode is null or cCusCode='') "
+            sql_cus = f"select cContactCode,cContactName,cMobilePhone,cOfficePhone,cMemo from {database}.dbo.Crm_Contact where cCusCode='{cuscode}' or (cCusCode is null or cCusCode='')"
             res_cus = mssql.query(sql_cus)
             data = list(
                 map(lambda x: {"code": x[0], "name": x[1], "mobile_phone": x[2], "office_phone": x[3], "cmemo": x[4]},

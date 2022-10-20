@@ -42,7 +42,7 @@ class U8Login:
         return base_info, login_url, logout_url
 
     def product(self):
-        base_info = {"sServer": "192.168.0.158", "sAccID": f"(default)@{self.account}",
+        base_info = {"sServer": "192.168.0.154", "sAccID": f"(default)@{self.account}",
                      "sLoginDate": f"{datetime.date.today()}",
                      "sUserID": "EDI2", "sPassword": "@Yyh2022", "sSubId": "AS", "sSerial": "abc@123"}
         login_url = 'http://192.168.0.154:13399/Login/Token'

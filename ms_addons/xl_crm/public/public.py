@@ -174,6 +174,7 @@ def u8_account_name(code, enviroment):
             '101': 'UFDATA_101_2017',
             '103': 'UFDATA_103_2017',
             '106': 'UFDATA_106_2017',
+            '107': 'UFDATA_107_2022',
             '108': 'UFDATA_108_2017',
             '603': 'UFDATA_603_2017',
             '105': 'UFDATA_105_2018',

@@ -63,11 +63,12 @@ class Base:
     def json_response(self, rp):
         # rp_ = json.dumps(rp).replace('False','')
         headers = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"}
-        return werkzeug.wrappers.Response(json.dumps(rp, ensure_ascii=False, cls=self.MyEncoder).replace("false", '""'),
-                                          mimetype='application/json',
-                                          headers=headers)
+        return werkzeug.wrappers.Response(
+            json.dumps(rp, ensure_ascii=False, cls=self.MyEncoder).replace("false", '""').replace("null", '""'),
+            mimetype='application/json',
+            headers=headers)
 
-    def xml_response(self,rp):
+    def xml_response(self, rp):
         headers = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"}
         return werkzeug.wrappers.Response(rp,
                                           mimetype='application/json',

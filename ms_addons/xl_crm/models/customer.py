@@ -64,10 +64,10 @@ class Xlcustomer(models.Model):
 
     @api.model
     def get_customer_max_number(self):
-        max_num_row = self.env['xlcrm.customer'].sudo().search_read([],[('id')],order='id desc',limit=1)
+        max_num_row = self.env['xlcrm.customer'].sudo().search_read([],['id','customer_no'],order='customer_no desc',limit=1)
         max_num = "000000"
         if max_num_row:
-            max_num = max_num_row[0]["id"] + 1
+            max_num = int(max_num_row[0]["customer_no"][2:]) + 1
         return max_num
 
     # @api.multi

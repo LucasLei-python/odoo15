@@ -283,9 +283,9 @@ class Aps:
                                                                                                                '+').replace(
                             'per;', '%'),
                         "ccdefine2": res['ccdefine2'],
-                        "ccdefine10": res['payment'].replace('amp;', '&').replace('eq;', '=').replace('plus;',
-                                                                                                      '+').replace(
-                            'per;', '%'),
+                        # "ccdefine10": res['payment'].replace('amp;', '&').replace('eq;', '=').replace('plus;',
+                        #                                                                               '+').replace(
+                        #     'per;', '%'),
                         "ccussscode": res["ccussscode"].split('-')[0],
                         "ccusexch_name": res['ccusexch_name'],
                         "InvoiceCompany": res.code,
@@ -293,7 +293,8 @@ class Aps:
                         "customer_authall": {
                             "customer_auth": auth_data
                         },
-                        "self_define8": res.cus_en_address,
+
+                        "ccdefine7": res.cus_en_address,
                         "self_define11": env['xlcrm.account.sales'].sudo().search([("review_id", "=",
                                                                                     res.review_id.id)]).employees,
                         "self_define13": reg_cash,

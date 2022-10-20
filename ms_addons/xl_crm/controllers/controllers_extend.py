@@ -618,7 +618,7 @@ class XlCrmExtend(http.Controller, Base):
     @http.route([
         '/api/v11/setCusConsolidatedItem',
     ], auth='none', type='http', csrf=False, methods=['POST'])
-    def set_cus_item(self, model=None, success=True, message='', **kw):
+    def set_cus_cons_item(self, model=None, success=True, message='', **kw):
         success, message = True, ''
         try:
             token = kw.pop('token')

@@ -113,7 +113,7 @@ class Xlaccount(models.Model):
     def get_consolidated(self):
         try:
             cr, env = self.get_env()
-            # grab_consolidated(env)
+            grab_consolidated(env)
             suit_consolidated(env)
             cr.close()
         except Exception as e:

@@ -1163,6 +1163,7 @@ class CCF(BaseInfo):
             res_['invoicing_date'] = res_cus.invoicing_date
             res_['settlement_date'] = res_cus.settlement_date
             res_['customer_class'] = res_cus.customer_class
+            res_['seed_date'] = res_cus.seed_date
             authdimen = env['xlcrm.u8_customer_authdimen'].sudo().search_read([('cus', '=', res_cus.id)],
                                                                               fields=['cadcode', 'cadname'])
             res_['authdimen'] = list(map(lambda x: f"{x['cadcode']}-{x['cadname']}", authdimen)) if authdimen else []
